@@ -30,7 +30,10 @@ public class Main extends Game implements ApplicationListener {
     Array<Sprite> palpatines;
     Array<Sprite> lightsabers;
     float spawnTimer;
+    float saberTimer;
     Rectangle yodaRectangle;
+    Rectangle saberRectangle;
+    Rectangle palpRectangle;
 
 
     @Override
@@ -46,12 +49,14 @@ public class Main extends Game implements ApplicationListener {
         viewport = new FitViewport(8, 5);
 
         yodaSprite = new Sprite(yodaTexture);
-        yodaSprite.setSize(1, 3/2f);
-        yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/2f, (viewport.getWorldHeight()/2f) - 3/4f);
+        yodaSprite.setSize(1/2f, 3/4f);
+        yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/4f, (viewport.getWorldHeight()/2f) - 3/8f);
         yodaSprite.setOriginCenter();
         palpatines = new Array<>();
         lightsabers = new Array<>();
         yodaRectangle = new Rectangle();
+        saberRectangle = new Rectangle();
+        palpRectangle = new Rectangle();
     }
 
     @Override
@@ -76,10 +81,22 @@ public class Main extends Game implements ApplicationListener {
         float delta = Gdx.graphics.getDeltaTime();
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
-        float lerpSpeed = 1f;
+        float palpSpeed = 2f;
         float saberSpeed = 10f;
         yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
-
+        //palp movement
+        for (int j = palpatines.size - 1; j >= 0; j--) {
+            Sprite palpSprite = palpatines.get(j);
+            float xMovement = yodaSprite.getX() - palpSprite.getX();
+            float yMovement = yodaSprite.getY() - palpSprite.getY();
+            float len = (float)Math.sqrt(xMovement*xMovement + yMovement*yMovement);
+            if (len != 0){
+                xMovement /= len;
+                yMovement /= len;
+            }
+            palpSprite.translate(xMovement*palpSpeed*delta, yMovement*palpSpeed*delta);
+        }
+        //projectile movement and collision checks
         for(int i = lightsabers.size-1;i>=0;i--) {
             Sprite saberSprite = lightsabers.get(i);
             float angleRadians = (float) Math.toRadians(saberSprite.getRotation());
@@ -90,31 +107,35 @@ public class Main extends Game implements ApplicationListener {
             float yVal = saberSprite.getY();
             float saberHeight = saberSprite.getHeight();
             float saberWidth = saberSprite.getWidth();
-            Rectangle saberRectangle = new Rectangle(xVal, yVal, saberWidth, saberHeight);
+            saberRectangle.set(xVal, yVal, saberWidth, saberHeight);
             if (xVal < -saberWidth || yVal < -saberHeight || xVal > worldWidth + saberWidth || yVal > worldHeight + saberHeight) {
                 lightsabers.removeIndex(i);
             }
             for (int j = palpatines.size - 1; j >= 0; j--) {
                 Sprite palpSprite = palpatines.get(j);
-                Vector2 currentPos = new Vector2(palpSprite.getX(), palpSprite.getY());
-                Vector2 targetPos = new Vector2(yodaSprite.getX(), yodaSprite.getY());
-                currentPos.lerp(targetPos, lerpSpeed * delta);
-                palpSprite.setPosition(currentPos.x, currentPos.y);
-                Rectangle palpRectangle = new Rectangle(palpSprite.getX(), palpSprite.getY(), palpSprite.getWidth(), palpSprite.getHeight());
+                palpRectangle.set(palpSprite.getX(), palpSprite.getY(), palpSprite.getWidth(), palpSprite.getHeight());
+
                 if (yodaRectangle.overlaps(palpRectangle)) {
                     palpatines.removeIndex(j);
                     yodaDeathSound.play();
+                    break;
                 } else if (saberRectangle.overlaps(palpRectangle)) {
                     palpatines.removeIndex(j);
                     lightsabers.removeIndex(i);
                     palpDeathSound.play();
+                    break;
                 }
             }
         }
+        //spawn and fire rates
         spawnTimer += delta;
+        saberTimer += delta;
         if(spawnTimer > 1f){
             spawnTimer = 0;
             spawnPalps();
+        }
+        if(saberTimer > 0.3f){
+            saberTimer = 0;
             spawnSabers();
         }
     }
@@ -141,7 +162,7 @@ public class Main extends Game implements ApplicationListener {
 
     private void spawnSabers(){
         Sprite saberSprite = new Sprite(saberTexture);
-        saberSprite.setSize(2/13f,1f);
+        saberSprite.setSize(1/13f,1/2f);
         saberSprite.setOriginCenter();
         saberSprite.rotate(yodaSprite.getRotation());
         saberSprite.setX(yodaSprite.getX());
@@ -152,8 +173,8 @@ public class Main extends Game implements ApplicationListener {
     private void spawnPalps(){
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
-        float palpheight = 3/2f;
-        float palpwidth = 6/5f;
+        float palpheight = 3/4f;
+        float palpwidth = 3/5f;
         float screenSide = MathUtils.random(0,3);
         float x = 0;
         float y = 0;
