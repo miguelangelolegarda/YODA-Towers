@@ -1,232 +1,86 @@
 package com.yodatowers;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class Main extends Game implements ApplicationListener {
-    Texture backgroundTexture;
-    Texture yodaTexture;
-    Texture palpTexture;
-    Texture saberTexture;
-    Sound yodaDeathSound;
-    Sound palpDeathSound;
-    SpriteBatch spriteBatch;
-    Sprite yodaSprite;
-    FitViewport viewport;
-    Array<Sprite> palpatines;
-    Array<Sprite> lightsabers;
-    float spawnTimer;
-    float saberTimer;
-    Rectangle yodaRectangle;
-    Rectangle saberRectangle;
-    Rectangle palpRectangle;
-
+/** Main application entry. Shows a start button and switches to GameScreen on click. */
+public class Main extends Game {
+    private Stage stage;
+    private Table table;
+    private Texture buttonTexture;
+    private BitmapFont buttonFont;
+    private TextButton startButton;
 
     @Override
-    public void create() {
-        backgroundTexture = new Texture("background.jpg");
-        yodaTexture = new Texture("legoYoda.png");
-        palpTexture = new Texture("palpatine.png");
-        saberTexture = new Texture("greenSaber.png");
-        yodaDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-yoda-death-sound-effect.mp3"));
-        palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
+    public void create () {
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
+        buttonFont = new BitmapFont();
 
-        spriteBatch = new SpriteBatch();
-        viewport = new FitViewport(8, 5);
+        table = new Table();
+        table.setFillParent(true); // take up the whole screen
+        table.center();
+        stage.addActor(table);
 
-        yodaSprite = new Sprite(yodaTexture);
-        yodaSprite.setSize(1/2f, 3/4f);
-        yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/4f, (viewport.getWorldHeight()/2f) - 3/8f);
-        yodaSprite.setOriginCenter();
-        palpatines = new Array<>();
-        lightsabers = new Array<>();
-        yodaRectangle = new Rectangle();
-        saberRectangle = new Rectangle();
-        palpRectangle = new Rectangle();
-    }
+        table.setDebug(false);
 
-    @Override
-    public void render() {
-        // Draw your screen here. "delta" is the time since last render in seconds.
-        input();
-        logic();
-        draw();
-    }
+        // Create pixel
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        buttonTexture = new Texture(pixmap);
+        pixmap.dispose();
 
-    private void input(){
-        float speed = 180f;
-        float delta = Gdx.graphics.getDeltaTime();
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            yodaSprite.rotate(-speed*delta);
-        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            yodaSprite.rotate(speed*delta);
-        }
-    }
-
-    private void logic(){
-        float delta = Gdx.graphics.getDeltaTime();
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        float palpSpeed = 2f;
-        float saberSpeed = 10f;
-        yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
-        //palp movement
-        for (int j = palpatines.size - 1; j >= 0; j--) {
-            Sprite palpSprite = palpatines.get(j);
-            float xMovement = yodaSprite.getX() - palpSprite.getX();
-            float yMovement = yodaSprite.getY() - palpSprite.getY();
-            float len = (float)Math.sqrt(xMovement*xMovement + yMovement*yMovement);
-            if (len != 0){
-                xMovement /= len;
-                yMovement /= len;
+        // Button for Start Game
+        TextButtonStyle style = new TextButtonStyle();
+        style.font = buttonFont;
+        TextureRegionDrawable buttonBackground = new TextureRegionDrawable(new TextureRegion(buttonTexture));
+        style.up = buttonBackground.tint(new Color(0.85f, 0.85f, 0.85f, 1f)); // normal
+        style.over = buttonBackground.tint(new Color(0.95f, 0.95f, 0.95f, 1f)); // hover
+        style.down = buttonBackground.tint(new Color(0.70f, 0.70f, 0.70f, 1f)); // click
+        style.fontColor = Color.BLACK;
+        startButton = new TextButton("Start Game", style);
+        startButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+                setScreen(new GameScreen(Main.this));
             }
-            palpSprite.translate(xMovement*palpSpeed*delta, yMovement*palpSpeed*delta);
-        }
-        //projectile movement and collision checks
-        for(int i = lightsabers.size-1;i>=0;i--) {
-            Sprite saberSprite = lightsabers.get(i);
-            float angleRadians = (float) Math.toRadians(saberSprite.getRotation());
-            float xTrajectory = saberSpeed * (float) Math.cos(angleRadians) * delta;
-            float yTrajectory = saberSpeed * (float) Math.sin(angleRadians) * delta;
-            saberSprite.translate(xTrajectory, yTrajectory);
-            float xVal = saberSprite.getX();
-            float yVal = saberSprite.getY();
-            float saberHeight = saberSprite.getHeight();
-            float saberWidth = saberSprite.getWidth();
-            saberRectangle.set(xVal, yVal, saberWidth, saberHeight);
-            if (xVal < -saberWidth || yVal < -saberHeight || xVal > worldWidth + saberWidth || yVal > worldHeight + saberHeight) {
-                lightsabers.removeIndex(i);
-            }
-            for (int j = palpatines.size - 1; j >= 0; j--) {
-                Sprite palpSprite = palpatines.get(j);
-                palpRectangle.set(palpSprite.getX(), palpSprite.getY(), palpSprite.getWidth(), palpSprite.getHeight());
-
-                if (yodaRectangle.overlaps(palpRectangle)) {
-                    palpatines.removeIndex(j);
-                    yodaDeathSound.play();
-                    break;
-                } else if (saberRectangle.overlaps(palpRectangle)) {
-                    palpatines.removeIndex(j);
-                    lightsabers.removeIndex(i);
-                    palpDeathSound.play();
-                    break;
-                }
-            }
-        }
-        //spawn and fire rates
-        spawnTimer += delta;
-        saberTimer += delta;
-        if(spawnTimer > 1f){
-            spawnTimer = 0;
-            spawnPalps();
-        }
-        if(saberTimer > 0.3f){
-            saberTimer = 0;
-            spawnSabers();
-        }
-    }
-
-    private void draw(){
-        ScreenUtils.clear(Color.BLACK);
-        viewport.apply();
-        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
-        spriteBatch.begin();
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-
-        spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
-        yodaSprite.draw(spriteBatch);
-
-        for(Sprite palpSprite : palpatines){
-            palpSprite.draw(spriteBatch);
-        }
-        for(Sprite saberSprite : lightsabers){
-            saberSprite.draw(spriteBatch);
-        }
-        spriteBatch.end();
-    }
-
-    private void spawnSabers(){
-        Sprite saberSprite = new Sprite(saberTexture);
-        saberSprite.setSize(1/13f,1/2f);
-        saberSprite.setOriginCenter();
-        saberSprite.rotate(yodaSprite.getRotation());
-        saberSprite.setX(yodaSprite.getX());
-        saberSprite.setY(yodaSprite.getY());
-        lightsabers.add(saberSprite);
-    }
-
-    private void spawnPalps(){
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        float palpheight = 3/4f;
-        float palpwidth = 3/5f;
-        float screenSide = MathUtils.random(0,3);
-        float x = 0;
-        float y = 0;
-        float offScreenBuffer = 5;
-
-        Sprite palpSprite = new Sprite(palpTexture);
-        palpSprite.setSize(palpwidth, palpheight);
-        switch((int)screenSide){
-            case 0:
-                x = MathUtils.random(0, worldWidth);
-                y = worldHeight + offScreenBuffer;
-                break;
-            case 1:
-                x = -offScreenBuffer;
-                y = MathUtils.random(0, worldHeight);
-                break;
-            case 2:
-                x = MathUtils.random(0, worldWidth);
-                y = -offScreenBuffer;
-                break;
-            case 3:
-                x = worldWidth + offScreenBuffer;
-                y = MathUtils.random(0, worldHeight);
-                break;
-        }
-        palpSprite.setX(x);
-        palpSprite.setY(y);
-        palpatines.add(palpSprite);
+        });
+        table.add(startButton).pad(100f);
     }
 
     @Override
-    public void resize(int width, int height) {
-        // If the window is minimized on a desktop (LWJGL3) platform, width and height are 0, which causes problems.
-        // In that case, we don't resize anything, and wait for the window to be a normal size before updating.
-        if(width <= 0 || height <= 0) return;
-        viewport.update(width, height, true);
-        // Resize your screen here. The parameters represent the new window size.
+    public void render () {
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); // Clear screen
+        stage.act(Gdx.graphics.getDeltaTime()); // Update UI
+        stage.draw(); // render UI
+        super.render(); // render current screen if any
     }
 
     @Override
-    public void pause() {
-        // Invoked when your application is paused.
+    public void resize (int width, int height) {
+        stage.getViewport().update(width, height, true);
+        if (getScreen() != null) getScreen().resize(width, height);
     }
 
     @Override
-    public void resume() {
-        // Invoked when your application is resumed after pause.
-    }
-
-    @Override
-    public void dispose() {
-        spriteBatch.dispose();
-        palpTexture.dispose();
+    public void dispose() { // Frees memory when closing the game
+        if (stage != null) stage.dispose();
+        if (buttonTexture != null) buttonTexture.dispose();
+        if (buttonFont != null) buttonFont.dispose();
+        if (getScreen() != null) getScreen().dispose();
     }
 }
