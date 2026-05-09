@@ -15,6 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.yodatowers.logic.*;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game implements ApplicationListener {
@@ -27,13 +28,12 @@ public class Main extends Game implements ApplicationListener {
     SpriteBatch spriteBatch;
     Sprite yodaSprite;
     FitViewport viewport;
-    Array<Sprite> palpatines;
+    Array<Enemy> enemies;
     Array<Sprite> lightsabers;
     float spawnTimer;
     float saberTimer;
     Rectangle yodaRectangle;
     Rectangle saberRectangle;
-    Rectangle palpRectangle;
 
 
     @Override
@@ -52,11 +52,10 @@ public class Main extends Game implements ApplicationListener {
         yodaSprite.setSize(1/2f, 3/4f);
         yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/4f, (viewport.getWorldHeight()/2f) - 3/8f);
         yodaSprite.setOriginCenter();
-        palpatines = new Array<>();
+        enemies = new Array<>(); // Changed
         lightsabers = new Array<>();
         yodaRectangle = new Rectangle();
         saberRectangle = new Rectangle();
-        palpRectangle = new Rectangle();
     }
 
     @Override
@@ -84,19 +83,12 @@ public class Main extends Game implements ApplicationListener {
         float palpSpeed = 2f;
         float saberSpeed = 10f;
         yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
-        //palp movement
-        for (int j = palpatines.size - 1; j >= 0; j--) {
-            Sprite palpSprite = palpatines.get(j);
-            float xMovement = yodaSprite.getX() - palpSprite.getX();
-            float yMovement = yodaSprite.getY() - palpSprite.getY();
-            float len = (float)Math.sqrt(xMovement*xMovement + yMovement*yMovement);
-            if (len != 0){
-                xMovement /= len;
-                yMovement /= len;
-            }
-            palpSprite.translate(xMovement*palpSpeed*delta, yMovement*palpSpeed*delta);
+        // Enemy movement
+        for (int j = enemies.size - 1; j >= 0; j--) {
+            Enemy enemy = enemies.get(j);
+            enemy.update(delta, yodaSprite.getX(), yodaSprite.getY());
         }
-        //projectile movement and collision checks
+        // Projectile movement and collision checks
         for(int i = lightsabers.size-1;i>=0;i--) {
             Sprite saberSprite = lightsabers.get(i);
             float angleRadians = (float) Math.toRadians(saberSprite.getRotation());
@@ -110,19 +102,23 @@ public class Main extends Game implements ApplicationListener {
             saberRectangle.set(xVal, yVal, saberWidth, saberHeight);
             if (xVal < -saberWidth || yVal < -saberHeight || xVal > worldWidth + saberWidth || yVal > worldHeight + saberHeight) {
                 lightsabers.removeIndex(i);
+                continue; // Skip collision check if already removed
             }
-            for (int j = palpatines.size - 1; j >= 0; j--) {
-                Sprite palpSprite = palpatines.get(j);
-                palpRectangle.set(palpSprite.getX(), palpSprite.getY(), palpSprite.getWidth(), palpSprite.getHeight());
+            for (int j = enemies.size - 1; j >= 0; j--) {
+                Enemy enemy = enemies.get(j);
 
-                if (yodaRectangle.overlaps(palpRectangle)) {
-                    palpatines.removeIndex(j);
+                if (yodaRectangle.overlaps(enemy.getBounds())) {
+                    enemies.removeIndex(j);
                     yodaDeathSound.play();
                     break;
-                } else if (saberRectangle.overlaps(palpRectangle)) {
-                    palpatines.removeIndex(j);
-                    lightsabers.removeIndex(i);
-                    palpDeathSound.play();
+                } else if (saberRectangle.overlaps(enemy.getBounds())) {
+                    lightsabers.removeIndex(i); // Destroy Saber
+                    enemy.takeDamage(1); // Hurt Enemy
+
+                    if(enemy.isDead()) {
+                        enemies.removeIndex(j); // Kill Enemy if HP = 0
+                        palpDeathSound.play();
+                    }
                     break;
                 }
             }
@@ -132,7 +128,7 @@ public class Main extends Game implements ApplicationListener {
         saberTimer += delta;
         if(spawnTimer > 1f){
             spawnTimer = 0;
-            spawnPalps();
+            spawnEnemy();
         }
         if(saberTimer > 0.3f){
             saberTimer = 0;
@@ -151,8 +147,8 @@ public class Main extends Game implements ApplicationListener {
         spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
         yodaSprite.draw(spriteBatch);
 
-        for(Sprite palpSprite : palpatines){
-            palpSprite.draw(spriteBatch);
+        for(Enemy enemy : enemies){
+            enemy.draw(spriteBatch);
         }
         for(Sprite saberSprite : lightsabers){
             saberSprite.draw(spriteBatch);
@@ -170,18 +166,14 @@ public class Main extends Game implements ApplicationListener {
         lightsabers.add(saberSprite);
     }
 
-    private void spawnPalps(){
+    private void spawnEnemy(){
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
-        float palpheight = 3/4f;
-        float palpwidth = 3/5f;
         float screenSide = MathUtils.random(0,3);
         float x = 0;
         float y = 0;
         float offScreenBuffer = 5;
 
-        Sprite palpSprite = new Sprite(palpTexture);
-        palpSprite.setSize(palpwidth, palpheight);
         switch((int)screenSide){
             case 0:
                 x = MathUtils.random(0, worldWidth);
@@ -200,9 +192,21 @@ public class Main extends Game implements ApplicationListener {
                 y = MathUtils.random(0, worldHeight);
                 break;
         }
-        palpSprite.setX(x);
-        palpSprite.setY(y);
-        palpatines.add(palpSprite);
+
+        // Randomly spawn 1 of the 5 enemy variants
+        int enemyType = MathUtils.random(0, 4);
+        Enemy newEnemy;
+
+        switch(enemyType) {
+            case 0: newEnemy = new BasicEnemy(palpTexture, x, y); break;
+//            case 1: newEnemy = new Enemyvar1(palpTexture, x, y); break;
+//            case 2: newEnemy = new Enemyvar2(palpTexture, x, y); break;
+//            case 3: newEnemy = new Enemyvar3(palpTexture, x, y); break;
+//            case 4: newEnemy = new Enemyvar4(palpTexture, x, y); break;
+            default: newEnemy = new BasicEnemy(palpTexture, x, y); break;
+        }
+
+        enemies.add(newEnemy);
     }
 
     @Override
