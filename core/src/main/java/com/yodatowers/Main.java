@@ -67,13 +67,36 @@ public class Main extends Game implements ApplicationListener {
     }
 
     private void input(){
-        float speed = 180f;
+        float speed = 3f;
         float delta = Gdx.graphics.getDeltaTime();
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            yodaSprite.rotate(-speed*delta);
-        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            yodaSprite.rotate(speed*delta);
-        }
+//        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+//            yodaSprite.rotate(-speed*delta);
+//        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+//            yodaSprite.rotate(speed*delta);
+//        }
+
+        // Logic to move Yoda Sprite
+        if(Gdx.input.isKeyPressed(Input.Keys.W))
+            yodaSprite.translateY(speed * delta);
+        if(Gdx.input.isKeyPressed(Input.Keys.S))
+            yodaSprite.translateY(-speed * delta);
+        if(Gdx.input.isKeyPressed(Input.Keys.A))
+            yodaSprite.translateX(-speed * delta);
+        if(Gdx.input.isKeyPressed(Input.Keys.D))
+            yodaSprite.translateX(speed * delta);
+
+
+        float maxX = viewport.getWorldWidth() - yodaSprite.getWidth();
+        float maxY = viewport.getWorldHeight() - yodaSprite.getHeight();
+
+        float clampedX = MathUtils.clamp(yodaSprite.getX(), 0, maxX);
+        float clampedY = MathUtils.clamp(yodaSprite.getY(), 0, maxY);
+
+        yodaSprite.setPosition(clampedX, clampedY);
+
+        Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+        float angle = MathUtils.atan2(mousePos.y - yodaSprite.getY(), mousePos.x - yodaSprite.getX()) * MathUtils.radiansToDegrees;
+        yodaSprite.setRotation(angle);
     }
 
     private void logic(){
@@ -199,7 +222,7 @@ public class Main extends Game implements ApplicationListener {
 
         switch(enemyType) {
             case 0: newEnemy = new BasicEnemy(palpTexture, x, y); break;
-//            case 1: newEnemy = new Enemyvar1(palpTexture, x, y); break;
+            case 1: newEnemy = new BossEnemy(palpTexture, x, y); break;
 //            case 2: newEnemy = new Enemyvar2(palpTexture, x, y); break;
 //            case 3: newEnemy = new Enemyvar3(palpTexture, x, y); break;
 //            case 4: newEnemy = new Enemyvar4(palpTexture, x, y); break;
