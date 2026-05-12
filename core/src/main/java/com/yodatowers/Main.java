@@ -30,10 +30,10 @@ public class Main extends Game implements ApplicationListener {
     FitViewport viewport;
     Array<Enemy> enemies;
     Array<Sprite> lightsabers;
-    float spawnTimer;
     float saberTimer;
     Rectangle yodaRectangle;
     Rectangle saberRectangle;
+    WaveManager waveManager;
 
 
     @Override
@@ -56,6 +56,8 @@ public class Main extends Game implements ApplicationListener {
         lightsabers = new Array<>();
         yodaRectangle = new Rectangle();
         saberRectangle = new Rectangle();
+
+        waveManager = new WaveManager(viewport, palpTexture);
     }
 
     @Override
@@ -69,6 +71,15 @@ public class Main extends Game implements ApplicationListener {
     private void input(){
         float speed = 3f;
         float delta = Gdx.graphics.getDeltaTime();
+
+        if (waveManager.isInShopPhase()) {
+            // Press enter to start the next wave for now. Shop logic TODO
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                waveManager.startNextWave();
+            }
+            return; // Stops enemies from moving while the shop is "open"
+        }
+        // Original movement logic
 //        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
 //            yodaSprite.rotate(-speed*delta);
 //        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
@@ -101,6 +112,7 @@ public class Main extends Game implements ApplicationListener {
 
     private void logic(){
         float delta = Gdx.graphics.getDeltaTime();
+        waveManager.update(delta, enemies);
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
         float palpSpeed = 2f;
@@ -146,13 +158,8 @@ public class Main extends Game implements ApplicationListener {
                 }
             }
         }
-        //spawn and fire rates
-        spawnTimer += delta;
+        //fire rates (spawn rate moved to wavemanager)
         saberTimer += delta;
-        if(spawnTimer > 1f){
-            spawnTimer = 0;
-            spawnEnemy();
-        }
         if(saberTimer > 0.3f){
             saberTimer = 0;
             spawnSabers();
@@ -187,49 +194,6 @@ public class Main extends Game implements ApplicationListener {
         saberSprite.setX(yodaSprite.getX());
         saberSprite.setY(yodaSprite.getY());
         lightsabers.add(saberSprite);
-    }
-
-    private void spawnEnemy(){
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        float screenSide = MathUtils.random(0,3);
-        float x = 0;
-        float y = 0;
-        float offScreenBuffer = 5;
-
-        switch((int)screenSide){
-            case 0:
-                x = MathUtils.random(0, worldWidth);
-                y = worldHeight + offScreenBuffer;
-                break;
-            case 1:
-                x = -offScreenBuffer;
-                y = MathUtils.random(0, worldHeight);
-                break;
-            case 2:
-                x = MathUtils.random(0, worldWidth);
-                y = -offScreenBuffer;
-                break;
-            case 3:
-                x = worldWidth + offScreenBuffer;
-                y = MathUtils.random(0, worldHeight);
-                break;
-        }
-
-        // Randomly spawn 1 of the 5 enemy variants
-        int enemyType = MathUtils.random(0, 4);
-        Enemy newEnemy;
-
-        switch(enemyType) {
-            case 0: newEnemy = new BasicEnemy(palpTexture, x, y); break;
-            case 1: newEnemy = new BossEnemy(palpTexture, x, y); break;
-//            case 2: newEnemy = new Enemyvar2(palpTexture, x, y); break;
-//            case 3: newEnemy = new Enemyvar3(palpTexture, x, y); break;
-//            case 4: newEnemy = new Enemyvar4(palpTexture, x, y); break;
-            default: newEnemy = new BasicEnemy(palpTexture, x, y); break;
-        }
-
-        enemies.add(newEnemy);
     }
 
     @Override
