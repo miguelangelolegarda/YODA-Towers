@@ -91,15 +91,15 @@ public class Main extends Game implements ApplicationListener {
 //            yodaSprite.rotate(speed*delta);
 //        }
 
-        // Logic to move Yoda Sprite
-        if(Gdx.input.isKeyPressed(Input.Keys.W))
-            yodaSprite.translateY(speed * delta);
-        if(Gdx.input.isKeyPressed(Input.Keys.S))
-            yodaSprite.translateY(-speed * delta);
-        if(Gdx.input.isKeyPressed(Input.Keys.A))
-            yodaSprite.translateX(-speed * delta);
-        if(Gdx.input.isKeyPressed(Input.Keys.D))
-            yodaSprite.translateX(speed * delta);
+        // Logic to move Yoda Sprite. Could be used later on
+//        if(Gdx.input.isKeyPressed(Input.Keys.W))
+//            yodaSprite.translateY(speed * delta);
+//        if(Gdx.input.isKeyPressed(Input.Keys.S))
+//            yodaSprite.translateY(-speed * delta);
+//        if(Gdx.input.isKeyPressed(Input.Keys.A))
+//            yodaSprite.translateX(-speed * delta);
+//        if(Gdx.input.isKeyPressed(Input.Keys.D))
+//            yodaSprite.translateX(speed * delta);
 
 
         float maxX = viewport.getWorldWidth() - yodaSprite.getWidth();

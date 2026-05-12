@@ -11,9 +11,13 @@ public class WaveManager {
     private float waveDuration = 60f; // Waves last exactly 1 minute
     private int currentWave;
     private boolean inShopPhase;
+    private int waveDifficulty;
+
 
     private Viewport viewport;
     private Texture enemyTexture;
+    private boolean waveFull;
+    private int currentValue;
 
     public WaveManager(Viewport viewport, Texture enemyTexture) {
         this.viewport = viewport;
@@ -22,6 +26,9 @@ public class WaveManager {
         this.waveTimer = 0f;
         this.spawnTimer = 0f;
         this.inShopPhase = false;
+        this.waveFull = false;
+        this.waveDifficulty = 7;
+        this.currentValue = 0;
     }
 
     public void update(float delta, Array<Enemy> enemies) {
@@ -35,7 +42,7 @@ public class WaveManager {
         // Capped @ enemies per 0.3 seconds
         float spawnCooldown = MathUtils.clamp(1.5f - (waveTimer / 60f), 0.3f, 1.5f);
 
-        if (spawnTimer >= spawnCooldown) {
+        if (spawnTimer >= spawnCooldown && !waveFull) {
             spawnTimer = 0;
             spawnEnemy(enemies);
         }
@@ -76,7 +83,6 @@ public class WaveManager {
         // Randomly select 1 of the 5 enemies, try implementing less chance for boss to spawn later
         int enemyType = MathUtils.random(0, 4);
         Enemy newEnemy;
-
         switch(enemyType) {
             case 0: newEnemy = new BasicEnemy(enemyTexture, x, y); break;
             case 1: newEnemy = new BossEnemy(enemyTexture, x, y); break;
@@ -85,8 +91,15 @@ public class WaveManager {
 //            case 4: newEnemy = new ?Enemy(enemyTexture, x, y); break;
             default: newEnemy = new BasicEnemy(enemyTexture, x, y); break;
         }
-
-        enemies.add(newEnemy);
+        if(waveDifficulty < currentValue + newEnemy.value){
+            newEnemy = null;
+        }
+        else {
+            if(waveDifficulty == currentValue + newEnemy.value){
+                waveFull = true;
+            }
+            enemies.add(newEnemy);
+        }
     }
 
     private void endWave() {
@@ -96,8 +109,11 @@ public class WaveManager {
 
     public void startNextWave() {
         currentWave++;
+        waveDifficulty = (int) (waveDifficulty * 1.4);
         waveTimer = 0f;
+        this.currentValue = 0;
         inShopPhase = false;
+        waveFull = false;
         System.out.println("Starting Wave " + currentWave + ".");
     }
 

@@ -10,14 +10,16 @@ public abstract class Enemy {
     protected Rectangle bounds; //Hitbox (Colliusion)
     protected float speed; // Movement units/seconds
     protected int health; // Hit points
+    protected int value; // Value for determining how much it adds to a wave
 
     // Enemy Properties
-    public Enemy(Texture texture, float x, float y, float width, float height, float speed, int health) {
+    public Enemy(Texture texture, float x, float y, float width, float height, float speed, int health, int value) {
         this.sprite = new Sprite(texture);
         this.sprite.setSize(width, height);
         this.sprite.setPosition(x, y);
         this.speed = speed;
         this.health = health;
+        this.value = value;
         // Bounds should match sprite's dimensions
         this.bounds = new Rectangle(x, y, width, height);
     }
