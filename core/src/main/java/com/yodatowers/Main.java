@@ -34,6 +34,8 @@ public class Main extends Game implements ApplicationListener {
     Rectangle yodaRectangle;
     Rectangle saberRectangle;
     WaveManager waveManager;
+    int yodaHealth;
+    boolean isGameOver;
 
 
     @Override
@@ -44,6 +46,8 @@ public class Main extends Game implements ApplicationListener {
         saberTexture = new Texture("greenSaber.png");
         yodaDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-yoda-death-sound-effect.mp3"));
         palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
+        yodaHealth = 3; // temporary yoda health
+        isGameOver = false;
 
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(8, 5);
@@ -69,6 +73,7 @@ public class Main extends Game implements ApplicationListener {
     }
 
     private void input(){
+        if (isGameOver) return;
         float speed = 3f;
         float delta = Gdx.graphics.getDeltaTime();
 
@@ -111,6 +116,7 @@ public class Main extends Game implements ApplicationListener {
     }
 
     private void logic(){
+        if (isGameOver) return;
         float delta = Gdx.graphics.getDeltaTime();
         waveManager.update(delta, enemies);
         float worldWidth = viewport.getWorldWidth();
@@ -144,7 +150,16 @@ public class Main extends Game implements ApplicationListener {
 
                 if (yodaRectangle.overlaps(enemy.getBounds())) {
                     enemies.removeIndex(j);
+                    yodaHealth--;
                     yodaDeathSound.play();
+
+                    System.out.println("Yoda hit! HP remaining: " + yodaHealth);
+
+                    if (yodaHealth <= 0) {
+                        System.out.println("GAME OVER!");
+                        isGameOver = true;
+                        // TODO: Game over screen
+                    }
                     break;
                 } else if (saberRectangle.overlaps(enemy.getBounds())) {
                     lightsabers.removeIndex(i); // Destroy Saber
