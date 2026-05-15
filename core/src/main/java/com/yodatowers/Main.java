@@ -30,7 +30,7 @@ public class Main extends Game implements ApplicationListener {
     Sprite yodaSprite;
     FitViewport viewport;
     CopyOnWriteArrayList<Enemy> enemies;
-    CopyOnWriteArrayList<Sprite> lightsabers;
+    CopyOnWriteArrayList<Projectile> lightsabers;
     float saberTimer;
     Rectangle yodaRectangle;
     Rectangle saberRectangle;
@@ -131,52 +131,56 @@ public class Main extends Game implements ApplicationListener {
         float palpSpeed = 2f;
         float saberSpeed = 10f;
         yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
-        // Enemy movement
+        // Enemy & Yoda collision loop
         for (int j = enemies.size() - 1; j >= 0; j--) {
             Enemy enemy = enemies.get(j);
             enemy.update(delta, yodaSprite.getX(), yodaSprite.getY());
-        }
-        // Projectile movement and collision checks
-        for(int i = lightsabers.size()-1;i>=0;i--) {
-            Sprite saberSprite = lightsabers.get(i);
-            float angleRadians = (float) Math.toRadians(saberSprite.getRotation());
-            float xTrajectory = saberSpeed * (float) Math.cos(angleRadians) * delta;
-            float yTrajectory = saberSpeed * (float) Math.sin(angleRadians) * delta;
-            saberSprite.translate(xTrajectory, yTrajectory);
-            float xVal = saberSprite.getX();
-            float yVal = saberSprite.getY();
-            float saberHeight = saberSprite.getHeight();
-            float saberWidth = saberSprite.getWidth();
-            saberRectangle.set(xVal, yVal, saberWidth, saberHeight);
-            if (xVal < -saberWidth || yVal < -saberHeight || xVal > worldWidth + saberWidth || yVal > worldHeight + saberHeight) {
-                lightsabers.remove(i);
-                continue; // Skip collision check if already removed
+
+            if (yodaRectangle.overlaps(enemy.getBounds())) {
+                enemies.remove(j);
+                yodaHealth--;
+                yodaDeathSound.play();
+                System.out.println("Yoda hit! HP remaining: " + yodaHealth);
+
+                if (yodaHealth <= 0) {
+                    System.out.println("GAME OVER!");
+                    isGameOver = true;
+                    // TODO: Game over screen
+                }
             }
+        }
+
+        // SabermMovement and enemy collision lopp
+        for(int i = lightsabers.size()-1; i>=0; i--) {
+            Projectile saber = lightsabers.get(i);
+
+            // Move saber and check max range
+            boolean outOfRange = saber.update(delta);
+
+            // Check screen boundaries
+            boolean outOfBounds = saber.getX() < -saber.getWidth() ||
+                saber.getY() < -saber.getHeight() ||
+                saber.getX() > worldWidth + saber.getWidth() ||
+                saber.getY() > worldHeight + saber.getHeight();
+
+            if (outOfRange || outOfBounds) {
+                lightsabers.remove(i);
+                continue;
+            }
+
+            // Check if this specific saber hit any enemy
             for (int j = enemies.size() - 1; j >= 0; j--) {
                 Enemy enemy = enemies.get(j);
 
-                if (yodaRectangle.overlaps(enemy.getBounds())) {
-                    enemies.remove(j);
-                    yodaHealth--;
-                    yodaDeathSound.play();
-
-                    System.out.println("Yoda hit! HP remaining: " + yodaHealth);
-
-                    if (yodaHealth <= 0) {
-                        System.out.println("GAME OVER!");
-                        isGameOver = true;
-                        // TODO: Game over screen
-                    }
-                    break;
-                } else if (saberRectangle.overlaps(enemy.getBounds())) {
-                    lightsabers.remove(i); // Destroy Saber
-                    enemy.takeDamage(1); // Hurt Enemy
+                if (saber.getBounds().overlaps(enemy.getBounds())) {
+                    lightsabers.remove(i);
+                    enemy.takeDamage(saber.getDamage());
 
                     if(enemy.isDead()) {
-                        enemies.remove(j); // Kill Enemy if HP = 0
+                        enemies.remove(j);
                         palpDeathSound.play();
                     }
-                    break;
+                    break; // Break loop once saber hits enemy
                 }
             }
         }
@@ -202,20 +206,29 @@ public class Main extends Game implements ApplicationListener {
         for(Enemy enemy : enemies){
             enemy.draw(spriteBatch);
         }
-        for(Sprite saberSprite : lightsabers){
-            saberSprite.draw(spriteBatch);
+        for(Projectile saber : lightsabers){
+            saber.draw(spriteBatch);
         }
         spriteBatch.end();
     }
 
     private void spawnSabers(){
-        Sprite saberSprite = new Sprite(saberTexture);
-        saberSprite.setSize(1/13f,1/2f);
-        saberSprite.setOriginCenter();
-        saberSprite.rotate(yodaSprite.getRotation());
-        saberSprite.setX(yodaSprite.getX());
-        saberSprite.setY(yodaSprite.getY());
-        lightsabers.add(saberSprite);
+        float saberSpeed = 10f;
+        int damage = 1;
+        float range = 6f;
+
+        Projectile newSaber = new Projectile(
+            saberTexture,
+            yodaSprite.getX(),
+            yodaSprite.getY(),
+            1/13f,
+            1/2f,
+            saberSpeed,
+            yodaSprite.getRotation(),
+            damage,
+            range
+        );
+        lightsabers.add(newSaber);
     }
 
     @Override

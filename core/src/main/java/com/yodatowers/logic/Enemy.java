@@ -47,7 +47,7 @@ public abstract class Enemy {
     }
 
     public Rectangle getBounds() {
-        return bounds;
+        return sprite.getBoundingRectangle();
     }
 
     public void takeDamage(int amount) {
