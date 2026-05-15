@@ -58,6 +58,14 @@ run {
   //setIgnoreExitValue(true)
   jvmArgs += "--enable-native-access=ALL-UNNAMED"
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+
+  try {
+    def coreOutput = project(':core').sourceSets.main.output
+    def coreJarName = project(':core').tasks.jar.archiveFileName.get()
+    classpath = files(coreOutput) + classpath.findAll { it.name != coreJarName }
+  } catch(Exception e) {
+    // If we can't reorder classpath for any reason, fall back to default.
+  }
 }
 
 jar {

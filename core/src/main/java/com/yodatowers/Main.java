@@ -15,14 +15,17 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.yodatowers.Logic.GameScreen;
+import com.yodatowers.UI.Loading; // import GameScreen from correct package location
 
-/** Main application entry. Shows a start button and switches to GameScreen on click. */
-public class Main extends Game {
+public class Main extends Game { 
     private Stage stage;
     private Table table;
     private Texture buttonTexture;
     private BitmapFont buttonFont;
     private TextButton startButton;
+    private Loading loadingScreen; // changed: use `Loading` (exists in com.yodatowers.UI) instead of missing LoadingScreen
+    private boolean loading = false; // added: track whether the loading screen is active
 
     @Override
     public void create () {
@@ -56,10 +59,15 @@ public class Main extends Game {
         startButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
-                setScreen(new GameScreen(Main.this));
+                // create Loading Screen
+                loadingScreen = new Loading(Main.this); // changed: instantiate `Loading` and pass Main.this
+                loading = true; // added: mark that loading has started
             }
         });
         table.add(startButton).pad(100f);
+
+        
+        
     }
 
     @Override
@@ -67,7 +75,20 @@ public class Main extends Game {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); // Clear screen
         stage.act(Gdx.graphics.getDeltaTime()); // Update UI
         stage.draw(); // render UI
-        super.render(); // render current screen if any
+         // render current screen if any
+
+        // Render loading screen
+        if(loading){ //while loading
+            if (loadingScreen.update(Gdx.graphics.getDeltaTime())) {
+
+                loading = false;
+
+                // Open actual game
+                setScreen(new GameScreen(Main.this));
+            }
+        }
+
+        super.render();
     }
 
     @Override

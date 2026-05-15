@@ -1,4 +1,4 @@
-package com.yodatowers;
+package com.yodatowers.Logic; // corrected package to match directory structure
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -6,16 +6,19 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class GameScreen implements Screen { // IMPLEMENTS SCREEN
     Texture backgroundTexture;
     Texture yodaTexture;
@@ -36,6 +39,13 @@ public class GameScreen implements Screen { // IMPLEMENTS SCREEN
 
     // CONSTRUCTOR
     private Game game;
+
+    //PAUSE LOGIC
+    private boolean paused = false;
+    BitmapFont font;
+    GlyphLayout pausedTitleLayout;
+    GlyphLayout pausedHintLayout;
+    private ShapeRenderer shape;
 
     public GameScreen(Game game) {
         this.game = game;
@@ -62,14 +72,36 @@ public class GameScreen implements Screen { // IMPLEMENTS SCREEN
         yodaRectangle = new Rectangle();
         saberRectangle = new Rectangle();
         palpRectangle = new Rectangle();
+
+        //PAUSE LOGIC
+        font = new BitmapFont();
+        shape = new ShapeRenderer();
+        font.getData().setScale(0.035f);
+        pausedTitleLayout = new GlyphLayout();
+        pausedHintLayout = new GlyphLayout();
+
     }
 
     @Override
     public void render(float delta) {
         // Draw your screen here. "delta" is the time since last render in seconds.
-        input(delta);
-        logic(delta);
-        draw();
+
+        //PAUSE LOGIC
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { //When ESC is pressed
+            if (!paused) { //Pause when not paused
+                pause();
+
+            } else { //Resume when paused
+                resume();
+            }
+        }
+
+        if (!paused) { //allow game logic when not paused
+            input(delta);
+            logic(delta);
+        }
+
+        draw(); //always allo draw screen
     }
 
     private void input(float delta){
@@ -161,7 +193,35 @@ public class GameScreen implements Screen { // IMPLEMENTS SCREEN
         for(Sprite saberSprite : lightsabers){
             saberSprite.draw(spriteBatch);
         }
+
         spriteBatch.end();
+
+        //PAUSE LOGIC
+        if (paused){
+            shape.setProjectionMatrix(viewport.getCamera().combined); //shapes follow viewport and game camera
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); // enables alpha transparency
+            
+            shape.begin(ShapeRenderer.ShapeType.Filled);
+            shape.setColor(0, 0, 0, 0.7f);
+            shape.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight()); //covers whole screen
+            shape.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+
+            
+
+            //I CANT DEBUG THIS PART!!!!!!!!!!!!!!!  ;((((
+
+            //spriteBatch.begin();
+            //font.draw(spriteBatch, "GAME PAUSED", 2.6f, 3.2f);
+            //font.draw(spriteBatch, "Press ESC to Resume", 2.1f, 2.6f);
+
+            //spriteBatch.end();
+
+        }
+        //
+
+
     }
 
     private void spawnSabers(){
@@ -220,12 +280,14 @@ public class GameScreen implements Screen { // IMPLEMENTS SCREEN
 
     @Override
     public void pause() {
-        // Invoked when your application is paused.
+        paused = true;
+        System.out.println("Game Paused");
     }
 
     @Override
     public void resume() {
-        // Invoked when your application is resumed after pause.
+        paused = false;
+        System.out.println("Game Resumed");
     }
 
     @Override
@@ -243,5 +305,8 @@ public class GameScreen implements Screen { // IMPLEMENTS SCREEN
         if (saberTexture != null) saberTexture.dispose();
         if (yodaDeathSound != null) yodaDeathSound.dispose();
         if (palpDeathSound != null) palpDeathSound.dispose();
+        //PAUSE LOGIC
+        if (font != null) font.dispose();
+        if (shape != null) shape.dispose();
     }
 }
