@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.yodatowers.logic.*;
+import java.util.concurrent.*;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game implements ApplicationListener {
@@ -28,8 +29,8 @@ public class Main extends Game implements ApplicationListener {
     SpriteBatch spriteBatch;
     Sprite yodaSprite;
     FitViewport viewport;
-    Array<Enemy> enemies;
-    Array<Sprite> lightsabers;
+    CopyOnWriteArrayList<Enemy> enemies;
+    CopyOnWriteArrayList<Sprite> lightsabers;
     float saberTimer;
     Rectangle yodaRectangle;
     Rectangle saberRectangle;
@@ -40,6 +41,7 @@ public class Main extends Game implements ApplicationListener {
 
     @Override
     public void create() {
+
         backgroundTexture = new Texture("background.jpg");
         yodaTexture = new Texture("legoYoda.png");
         palpTexture = new Texture("palpatine.png");
@@ -48,7 +50,6 @@ public class Main extends Game implements ApplicationListener {
         palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
         yodaHealth = 3; // temporary yoda health
         isGameOver = false;
-
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(8, 5);
 
@@ -56,19 +57,26 @@ public class Main extends Game implements ApplicationListener {
         yodaSprite.setSize(1/2f, 3/4f);
         yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/4f, (viewport.getWorldHeight()/2f) - 3/8f);
         yodaSprite.setOriginCenter();
-        enemies = new Array<>(); // Changed
-        lightsabers = new Array<>();
+        enemies = new CopyOnWriteArrayList<>(); // Changed
+        lightsabers = new CopyOnWriteArrayList<>();
         yodaRectangle = new Rectangle();
         saberRectangle = new Rectangle();
 
         waveManager = new WaveManager(viewport, palpTexture);
+
+        new Thread(() -> {
+            while(!isGameOver){
+                logic(1/60f);
+                try { Thread.sleep(16);}
+                catch (Exception e) {}
+            }
+        }).start();
     }
 
     @Override
     public void render() {
         // Draw your screen here. "delta" is the time since last render in seconds.
         input();
-        logic();
         draw();
     }
 
@@ -115,9 +123,8 @@ public class Main extends Game implements ApplicationListener {
         yodaSprite.setRotation(angle);
     }
 
-    private void logic(){
+    private void logic(float delta){
         if (isGameOver) return;
-        float delta = Gdx.graphics.getDeltaTime();
         waveManager.update(delta, enemies);
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
@@ -125,12 +132,12 @@ public class Main extends Game implements ApplicationListener {
         float saberSpeed = 10f;
         yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
         // Enemy movement
-        for (int j = enemies.size - 1; j >= 0; j--) {
+        for (int j = enemies.size() - 1; j >= 0; j--) {
             Enemy enemy = enemies.get(j);
             enemy.update(delta, yodaSprite.getX(), yodaSprite.getY());
         }
         // Projectile movement and collision checks
-        for(int i = lightsabers.size-1;i>=0;i--) {
+        for(int i = lightsabers.size()-1;i>=0;i--) {
             Sprite saberSprite = lightsabers.get(i);
             float angleRadians = (float) Math.toRadians(saberSprite.getRotation());
             float xTrajectory = saberSpeed * (float) Math.cos(angleRadians) * delta;
@@ -142,14 +149,14 @@ public class Main extends Game implements ApplicationListener {
             float saberWidth = saberSprite.getWidth();
             saberRectangle.set(xVal, yVal, saberWidth, saberHeight);
             if (xVal < -saberWidth || yVal < -saberHeight || xVal > worldWidth + saberWidth || yVal > worldHeight + saberHeight) {
-                lightsabers.removeIndex(i);
+                lightsabers.remove(i);
                 continue; // Skip collision check if already removed
             }
-            for (int j = enemies.size - 1; j >= 0; j--) {
+            for (int j = enemies.size() - 1; j >= 0; j--) {
                 Enemy enemy = enemies.get(j);
 
                 if (yodaRectangle.overlaps(enemy.getBounds())) {
-                    enemies.removeIndex(j);
+                    enemies.remove(j);
                     yodaHealth--;
                     yodaDeathSound.play();
 
@@ -162,11 +169,11 @@ public class Main extends Game implements ApplicationListener {
                     }
                     break;
                 } else if (saberRectangle.overlaps(enemy.getBounds())) {
-                    lightsabers.removeIndex(i); // Destroy Saber
+                    lightsabers.remove(i); // Destroy Saber
                     enemy.takeDamage(1); // Hurt Enemy
 
                     if(enemy.isDead()) {
-                        enemies.removeIndex(j); // Kill Enemy if HP = 0
+                        enemies.remove(j); // Kill Enemy if HP = 0
                         palpDeathSound.play();
                     }
                     break;

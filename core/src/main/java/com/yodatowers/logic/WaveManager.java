@@ -5,6 +5,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public class WaveManager {
     private float waveTimer;
     private float spawnTimer;
@@ -31,7 +33,7 @@ public class WaveManager {
         this.currentValue = 0;
     }
 
-    public void update(float delta, Array<Enemy> enemies) {
+    public void update(float delta, CopyOnWriteArrayList<Enemy> enemies) {
         // If we are in the shop phase, freeze timer and stop spawning enemies
         if (inShopPhase) return;
 
@@ -52,7 +54,7 @@ public class WaveManager {
         }
     }
 
-    private void spawnEnemy(Array<Enemy> enemies) {
+    private void spawnEnemy(CopyOnWriteArrayList<Enemy> enemies) {
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
         float offScreenBuffer = 2f;
