@@ -100,6 +100,7 @@ public class WaveManager {
             if(waveDifficulty == currentValue + newEnemy.value){
                 waveFull = true;
             }
+            currentValue += newEnemy.value;
             enemies.add(newEnemy);
         }
     }
