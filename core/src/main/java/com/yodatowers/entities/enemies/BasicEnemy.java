@@ -1,4 +1,4 @@
-package com.yodatowers.logic;
+package com.yodatowers.entities.enemies;
 import com.badlogic.gdx.graphics.Texture;
 
 public class BasicEnemy extends Enemy {

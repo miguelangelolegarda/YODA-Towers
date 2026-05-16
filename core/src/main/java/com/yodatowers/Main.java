@@ -1,22 +1,30 @@
 package com.yodatowers;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.yodatowers.logic.*;
-import java.util.concurrent.*;
+import com.yodatowers.effects.ExplosionEffect;
+import com.yodatowers.entities.enemies.Enemy;
+import com.yodatowers.entities.projectiles.Projectile;
+import com.yodatowers.entities.subtowers.BlasterRifle;
+import com.yodatowers.entities.subtowers.RocketLauncher;
+import com.yodatowers.entities.subtowers.SubTower;
+import com.yodatowers.entities.towers.YodaTower;
+import com.yodatowers.logic.WaveManager;
+import com.yodatowers.logic.WeaponToggleButton;
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game implements ApplicationListener {
@@ -27,116 +35,112 @@ public class Main extends Game implements ApplicationListener {
     Sound yodaDeathSound;
     Sound palpDeathSound;
     SpriteBatch spriteBatch;
-    Sprite yodaSprite;
+    ShapeRenderer shapeRenderer;
+    BitmapFont font;
     FitViewport viewport;
+    YodaTower yodaTower;
+    SubTower blasterRifle;
+    SubTower rocketLauncher;
     CopyOnWriteArrayList<Enemy> enemies;
-    CopyOnWriteArrayList<Projectile> lightsabers;
-    float saberTimer;
-    Rectangle yodaRectangle;
-    Rectangle saberRectangle;
+    CopyOnWriteArrayList<Projectile> projectiles;
+    CopyOnWriteArrayList<ExplosionEffect> explosionEffects;
+    CopyOnWriteArrayList<WeaponToggleButton> weaponButtons;
     WaveManager waveManager;
     int yodaHealth;
-    boolean isGameOver;
-
+    volatile boolean isGameOver;
 
     @Override
     public void create() {
-
         backgroundTexture = new Texture("background.jpg");
         yodaTexture = new Texture("legoYoda.png");
         palpTexture = new Texture("palpatine.png");
         saberTexture = new Texture("greenSaber.png");
         yodaDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-yoda-death-sound-effect.mp3"));
         palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
-        yodaHealth = 3; // temporary yoda health
+
+        yodaHealth = 3;
         isGameOver = false;
+
         spriteBatch = new SpriteBatch();
+        shapeRenderer = new ShapeRenderer();
+        font = new BitmapFont();
+        font.getData().setScale(0.01f);
         viewport = new FitViewport(8, 5);
 
-        yodaSprite = new Sprite(yodaTexture);
-        yodaSprite.setSize(1/2f, 3/4f);
-        yodaSprite.setPosition((viewport.getWorldWidth()/2f) - 1/4f, (viewport.getWorldHeight()/2f) - 3/8f);
-        yodaSprite.setOriginCenter();
-        enemies = new CopyOnWriteArrayList<>(); // Changed
-        lightsabers = new CopyOnWriteArrayList<>();
-        yodaRectangle = new Rectangle();
-        saberRectangle = new Rectangle();
+        enemies = new CopyOnWriteArrayList<>();
+        projectiles = new CopyOnWriteArrayList<>();
+        explosionEffects = new CopyOnWriteArrayList<>();
+        weaponButtons = new CopyOnWriteArrayList<>();
+
+        yodaTower = new YodaTower(yodaTexture, saberTexture, viewport);
+        blasterRifle = new BlasterRifle(yodaTower, saberTexture);
+        rocketLauncher = new RocketLauncher(yodaTower, saberTexture);
+        yodaTower.addSubTower(blasterRifle);
+        yodaTower.addSubTower(rocketLauncher);
+
+        weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
+        weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
 
         waveManager = new WaveManager(viewport, palpTexture);
 
         new Thread(() -> {
-            while(!isGameOver){
-                logic(1/60f);
-                try { Thread.sleep(16);}
-                catch (Exception e) {}
+            while (!isGameOver) {
+                logic(1 / 60f);
+                try {
+                    Thread.sleep(16);
+                } catch (Exception e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }).start();
     }
 
     @Override
     public void render() {
-        // Draw your screen here. "delta" is the time since last render in seconds.
         input();
         draw();
     }
 
-    private void input(){
+    private void input() {
         if (isGameOver) return;
-        float speed = 3f;
-        float delta = Gdx.graphics.getDeltaTime();
-
-        if (waveManager.isInShopPhase()) {
-            // Press enter to start the next wave for now. Shop logic TODO
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-                waveManager.startNextWave();
-            }
-            return; // Stops enemies from moving while the shop is "open"
-        }
-        // Original movement logic
-//        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-//            yodaSprite.rotate(-speed*delta);
-//        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-//            yodaSprite.rotate(speed*delta);
-//        }
-
-        // Logic to move Yoda Sprite. Could be used later on
-//        if(Gdx.input.isKeyPressed(Input.Keys.W))
-//            yodaSprite.translateY(speed * delta);
-//        if(Gdx.input.isKeyPressed(Input.Keys.S))
-//            yodaSprite.translateY(-speed * delta);
-//        if(Gdx.input.isKeyPressed(Input.Keys.A))
-//            yodaSprite.translateX(-speed * delta);
-//        if(Gdx.input.isKeyPressed(Input.Keys.D))
-//            yodaSprite.translateX(speed * delta);
-
-
-        float maxX = viewport.getWorldWidth() - yodaSprite.getWidth();
-        float maxY = viewport.getWorldHeight() - yodaSprite.getHeight();
-
-        float clampedX = MathUtils.clamp(yodaSprite.getX(), 0, maxX);
-        float clampedY = MathUtils.clamp(yodaSprite.getY(), 0, maxY);
-
-        yodaSprite.setPosition(clampedX, clampedY);
 
         Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-        float angle = MathUtils.atan2(mousePos.y - yodaSprite.getY(), mousePos.x - yodaSprite.getX()) * MathUtils.radiansToDegrees;
-        yodaSprite.setRotation(angle);
+        handleWeaponButtonInput(mousePos);
+
+        yodaTower.updateAim(mousePos);
+        yodaTower.clampToViewport(viewport);
+
+        if (waveManager.isInShopPhase() && Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            waveManager.startNextWave();
+        }
     }
 
-    private void logic(float delta){
+    private void handleWeaponButtonInput(Vector2 mousePos) {
+        if (!Gdx.input.justTouched()) {
+            return;
+        }
+
+        for (WeaponToggleButton weaponButton : weaponButtons) {
+            if (weaponButton.tryToggle(mousePos)) {
+                return;
+            }
+        }
+    }
+
+    private void logic(float delta) {
         if (isGameOver) return;
+
         waveManager.update(delta, enemies);
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        float palpSpeed = 2f;
-        float saberSpeed = 10f;
-        yodaRectangle.set(yodaSprite.getX(),yodaSprite.getY(),yodaSprite.getWidth()/2,yodaSprite.getHeight()/2);
-        // Enemy & Yoda collision loop
+        if (waveManager.isInShopPhase()) {
+            return;
+        }
+
+        Vector2 yodaCenter = yodaTower.getCenter();
         for (int j = enemies.size() - 1; j >= 0; j--) {
             Enemy enemy = enemies.get(j);
-            enemy.update(delta, yodaSprite.getX(), yodaSprite.getY());
+            enemy.update(delta, yodaCenter.x, yodaCenter.y);
 
-            if (yodaRectangle.overlaps(enemy.getBounds())) {
+            if (yodaTower.getBounds().overlaps(enemy.getBounds())) {
                 enemies.remove(j);
                 yodaHealth--;
                 yodaDeathSound.play();
@@ -145,99 +149,104 @@ public class Main extends Game implements ApplicationListener {
                 if (yodaHealth <= 0) {
                     System.out.println("GAME OVER!");
                     isGameOver = true;
-                    // TODO: Game over screen
+                    // TODO: Replace console game-over with a proper menu/run-summary screen.
                 }
             }
         }
 
-        // SabermMovement and enemy collision lopp
-        for(int i = lightsabers.size()-1; i>=0; i--) {
-            Projectile saber = lightsabers.get(i);
+        yodaTower.update(delta, enemies, projectiles);
+        updateProjectiles(delta);
+        updateExplosionEffects(delta);
+    }
 
-            // Move saber and check max range
-            boolean outOfRange = saber.update(delta);
+    private void updateProjectiles(float delta) {
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
 
-            // Check screen boundaries
-            boolean outOfBounds = saber.getX() < -saber.getWidth() ||
-                saber.getY() < -saber.getHeight() ||
-                saber.getX() > worldWidth + saber.getWidth() ||
-                saber.getY() > worldHeight + saber.getHeight();
+        for (int i = projectiles.size() - 1; i >= 0; i--) {
+            Projectile projectile = projectiles.get(i);
+            boolean outOfRange = projectile.update(delta);
+            boolean outOfBounds = projectile.getX() < -projectile.getWidth()
+                || projectile.getY() < -projectile.getHeight()
+                || projectile.getX() > worldWidth + projectile.getWidth()
+                || projectile.getY() > worldHeight + projectile.getHeight();
 
-            if (outOfRange || outOfBounds) {
-                lightsabers.remove(i);
+            if (outOfRange || outOfBounds || !projectile.isActive()) {
+                projectiles.remove(i);
                 continue;
             }
 
-            // Check if this specific saber hit any enemy
-            for (int j = enemies.size() - 1; j >= 0; j--) {
-                Enemy enemy = enemies.get(j);
-
-                if (saber.getBounds().overlaps(enemy.getBounds())) {
-                    lightsabers.remove(i);
-                    enemy.takeDamage(saber.getDamage());
-
-                    if(enemy.isDead()) {
-                        enemies.remove(j);
-                        palpDeathSound.play();
-                    }
-                    break; // Break loop once saber hits enemy
-                }
+            int defeatedEnemies = projectile.handleEnemyCollisions(enemies, explosionEffects);
+            for (int defeated = 0; defeated < defeatedEnemies; defeated++) {
+                palpDeathSound.play();
             }
-        }
-        //fire rates (spawn rate moved to wavemanager)
-        saberTimer += delta;
-        if(saberTimer > 0.3f){
-            saberTimer = 0;
-            spawnSabers();
+
+            if (!projectile.isActive()) {
+                projectiles.remove(i);
+            }
         }
     }
 
-    private void draw(){
+    private void updateExplosionEffects(float delta) {
+        for (int i = explosionEffects.size() - 1; i >= 0; i--) {
+            if (explosionEffects.get(i).update(delta)) {
+                explosionEffects.remove(i);
+            }
+        }
+    }
+
+    private void draw() {
         ScreenUtils.clear(Color.BLACK);
         viewport.apply();
+
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
         spriteBatch.begin();
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
 
         spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
-        yodaSprite.draw(spriteBatch);
+        yodaTower.draw(spriteBatch);
 
-        for(Enemy enemy : enemies){
+        for (Enemy enemy : enemies) {
             enemy.draw(spriteBatch);
         }
-        for(Projectile saber : lightsabers){
-            saber.draw(spriteBatch);
+        for (Projectile projectile : projectiles) {
+            projectile.draw(spriteBatch);
+        }
+        spriteBatch.end();
+
+        drawShapeEffectsAndUi();
+        drawUiLabels();
+    }
+
+    private void drawShapeEffectsAndUi() {
+        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (ExplosionEffect explosionEffect : explosionEffects) {
+            explosionEffect.draw(shapeRenderer);
+        }
+        for (WeaponToggleButton weaponButton : weaponButtons) {
+            weaponButton.drawBackground(shapeRenderer);
+        }
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void drawUiLabels() {
+        spriteBatch.begin();
+        font.setColor(Color.WHITE);
+        for (WeaponToggleButton weaponButton : weaponButtons) {
+            weaponButton.drawLabel(spriteBatch, font);
         }
         spriteBatch.end();
     }
 
-    private void spawnSabers(){
-        float saberSpeed = 10f;
-        int damage = 1;
-        float range = 6f;
-
-        Projectile newSaber = new Projectile(
-            saberTexture,
-            yodaSprite.getX(),
-            yodaSprite.getY(),
-            1/13f,
-            1/2f,
-            saberSpeed,
-            yodaSprite.getRotation(),
-            damage,
-            range
-        );
-        lightsabers.add(newSaber);
-    }
-
     @Override
     public void resize(int width, int height) {
-        // If the window is minimized on a desktop (LWJGL3) platform, width and height are 0, which causes problems.
-        // In that case, we don't resize anything, and wait for the window to be a normal size before updating.
-        if(width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0) return;
         viewport.update(width, height, true);
-        // Resize your screen here. The parameters represent the new window size.
     }
 
     @Override
@@ -253,6 +262,13 @@ public class Main extends Game implements ApplicationListener {
     @Override
     public void dispose() {
         spriteBatch.dispose();
+        shapeRenderer.dispose();
+        font.dispose();
+        backgroundTexture.dispose();
+        yodaTexture.dispose();
         palpTexture.dispose();
+        saberTexture.dispose();
+        yodaDeathSound.dispose();
+        palpDeathSound.dispose();
     }
 }

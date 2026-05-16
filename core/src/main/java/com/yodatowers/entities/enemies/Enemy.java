@@ -1,4 +1,4 @@
-package com.yodatowers.logic;
+package com.yodatowers.entities.enemies;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -56,5 +56,9 @@ public abstract class Enemy {
 
     public boolean isDead() {
         return health <= 0;
+    }
+
+    public int getValue() {
+        return value;
     }
 }

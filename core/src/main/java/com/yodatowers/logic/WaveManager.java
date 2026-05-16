@@ -2,8 +2,10 @@ package com.yodatowers.logic;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.yodatowers.entities.enemies.BasicEnemy;
+import com.yodatowers.entities.enemies.BossEnemy;
+import com.yodatowers.entities.enemies.Enemy;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -93,14 +95,14 @@ public class WaveManager {
 //            case 4: newEnemy = new ?Enemy(enemyTexture, x, y); break;
             default: newEnemy = new BasicEnemy(enemyTexture, x, y); break;
         }
-        if(waveDifficulty < currentValue + newEnemy.value){
+        if(waveDifficulty < currentValue + newEnemy.getValue()){
             newEnemy = null;
         }
         else {
-            if(waveDifficulty == currentValue + newEnemy.value){
+            if(waveDifficulty == currentValue + newEnemy.getValue()){
                 waveFull = true;
             }
-            currentValue += newEnemy.value;
+            currentValue += newEnemy.getValue();
             enemies.add(newEnemy);
         }
     }
