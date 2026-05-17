@@ -10,9 +10,9 @@ import com.yodatowers.entities.enemies.Enemy;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WaveManager {
-    private float waveTimer;
+//    private float waveTimer;
     private float spawnTimer;
-    private float waveDuration = 60f; // Waves last exactly 1 minute
+//    private float waveDuration = 60f; // Waves last exactly 1 minute
     private int currentWave;
     private boolean inShopPhase;
     private int waveDifficulty;
@@ -27,7 +27,7 @@ public class WaveManager {
         this.viewport = viewport;
         this.enemyTexture = enemyTexture;
         this.currentWave = 1;
-        this.waveTimer = 0f;
+//        this.waveTimer = 0f;
         this.spawnTimer = 0f;
         this.inShopPhase = false;
         this.waveFull = false;
@@ -39,21 +39,26 @@ public class WaveManager {
         // If we are in the shop phase, freeze timer and stop spawning enemies
         if (inShopPhase) return;
 
-        waveTimer += delta;
+//        waveTimer += delta;
         spawnTimer += delta;
 
         //The closer the timer gets to 60 seconds, the faster enemies spawn
         // Capped @ enemies per 0.3 seconds
-        float spawnCooldown = MathUtils.clamp(1.5f - (waveTimer / 60f), 0.3f, 1.5f);
+//        float spawnCooldown = MathUtils.clamp(1.5f - (waveTimer / 60f), 0.3f, 1.5f);
+        float spawnCooldown = 1.0f;
 
         if (spawnTimer >= spawnCooldown && !waveFull) {
             spawnTimer = 0;
             spawnEnemy(enemies);
         }
 
-        if (waveTimer >= waveDuration) {
+//        if (waveTimer >= waveDuration) {
+//            endWave();
+
+        if (waveFull && enemies.isEmpty()) {
             endWave();
         }
+        
     }
 
     private void spawnEnemy(CopyOnWriteArrayList<Enemy> enemies) {
@@ -115,7 +120,7 @@ public class WaveManager {
     public void startNextWave() {
         currentWave++;
         waveDifficulty = (int) (waveDifficulty * 1.4);
-        waveTimer = 0f;
+//        waveTimer = 0f;
         this.currentValue = 0;
         inShopPhase = false;
         waveFull = false;
