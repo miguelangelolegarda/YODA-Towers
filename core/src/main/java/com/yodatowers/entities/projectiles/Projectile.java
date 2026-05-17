@@ -1,0 +1,124 @@
+package com.yodatowers.entities.projectiles;
+
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
+import com.yodatowers.effects.ExplosionEffect;
+import com.yodatowers.entities.enemies.Enemy;
+
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class Projectile {
+    protected Sprite sprite;
+    protected float speed;
+    protected float angleRadians;
+    protected int damage;
+
+    protected float maxRange;
+    protected float distanceTraveled;
+    protected boolean active;
+
+    public Projectile(Texture texture, float x, float y, float width, float height, float speed, float angleDegrees, int damage, float maxRange) {
+        this.sprite = new Sprite(texture);
+        this.sprite.setSize(width, height);
+        this.sprite.setOriginCenter();
+        this.sprite.setPosition(x - width / 2f, y - height / 2f);
+        this.sprite.setRotation(angleDegrees);
+
+        this.speed = speed;
+        this.angleRadians = (float) Math.toRadians(angleDegrees);
+        this.damage = damage;
+        this.maxRange = maxRange;
+        this.distanceTraveled = 0f;
+        this.active = true;
+    }
+
+    protected void setColor(Color color) {
+        sprite.setColor(color);
+    }
+
+    public boolean update(float delta) {
+        if (!active) {
+            return true;
+        }
+
+        float xMovement = speed * (float) Math.cos(angleRadians) * delta;
+        float yMovement = speed * (float) Math.sin(angleRadians) * delta;
+
+        sprite.translate(xMovement, yMovement);
+
+        // Track how far it has gone using the pyth theorem?? MAAAAA change this if di tama ung formula
+        float movementDistance = (float) Math.sqrt(xMovement * xMovement + yMovement * yMovement);
+        distanceTraveled += movementDistance;
+
+        // This bool returns true if the projectile has exceeded its range and should be destroyed.
+        return distanceTraveled >= maxRange;
+    }
+
+    public int handleEnemyCollisions(CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects) {
+        for (Enemy enemy : enemies) {
+            if (getBounds().overlaps(enemy.getBounds())) {
+                return onEnemyHit(enemy, enemies, effects);
+            }
+        }
+        return 0;
+    }
+
+    protected int onEnemyHit(Enemy enemy, CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects) {
+        enemy.takeDamage(damage);
+        active = false;
+        return removeDeadEnemies(enemies);
+    }
+
+    protected int removeDeadEnemies(CopyOnWriteArrayList<Enemy> enemies) {
+        int defeated = 0;
+        for (int i = enemies.size() - 1; i >= 0; i--) {
+            Enemy enemy = enemies.get(i);
+            if (enemy.isDead()) {
+                enemies.remove(i);
+                defeated++;
+            }
+        }
+        return defeated;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void draw(SpriteBatch batch) {
+        sprite.draw(batch);
+    }
+
+    public Rectangle getBounds() {
+        return sprite.getBoundingRectangle();
+    }
+
+    public int getDamage() {
+        return damage;
+    }
+
+    public Vector2 getCenter() {
+        return new Vector2(sprite.getX() + sprite.getWidth() / 2f, sprite.getY() + sprite.getHeight() / 2f);
+    }
+
+    // For screen bounds checking at main
+    public float getX() {
+        return sprite.getX();
+    }
+
+    public float getY() {
+        return sprite.getY();
+    }
+
+    public float getWidth() {
+        return sprite.getWidth();
+    }
+
+    public float getHeight() {
+        return sprite.getHeight();
+    }
+}
