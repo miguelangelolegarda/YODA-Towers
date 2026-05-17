@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.yodatowers.effects.ExplosionEffect;
 import com.yodatowers.entities.enemies.Enemy;
+import com.yodatowers.logic.ShopManager;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -58,26 +59,27 @@ public class Projectile {
         return distanceTraveled >= maxRange;
     }
 
-    public int handleEnemyCollisions(CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects) {
+    public int handleEnemyCollisions(CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects, ShopManager shop) {
         for (Enemy enemy : enemies) {
             if (getBounds().overlaps(enemy.getBounds())) {
-                return onEnemyHit(enemy, enemies, effects);
+                return onEnemyHit(enemy, enemies, effects, shop);
             }
         }
         return 0;
     }
 
-    protected int onEnemyHit(Enemy enemy, CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects) {
+    protected int onEnemyHit(Enemy enemy, CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects,ShopManager shop) {
         enemy.takeDamage(damage);
         active = false;
-        return removeDeadEnemies(enemies);
+        return removeDeadEnemies(enemies, shop);
     }
 
-    protected int removeDeadEnemies(CopyOnWriteArrayList<Enemy> enemies) {
+    protected int removeDeadEnemies(CopyOnWriteArrayList<Enemy> enemies, ShopManager shop) {
         int defeated = 0;
         for (int i = enemies.size() - 1; i >= 0; i--) {
             Enemy enemy = enemies.get(i);
             if (enemy.isDead()) {
+                shop.addGold(enemy.getValue());
                 enemies.remove(i);
                 defeated++;
             }

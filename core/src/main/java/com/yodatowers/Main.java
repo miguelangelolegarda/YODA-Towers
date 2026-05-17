@@ -21,6 +21,7 @@ import com.yodatowers.entities.subtowers.BlasterRifle;
 import com.yodatowers.entities.subtowers.RocketLauncher;
 import com.yodatowers.entities.subtowers.SubTower;
 import com.yodatowers.entities.towers.YodaTower;
+import com.yodatowers.logic.ShopManager;
 import com.yodatowers.logic.WaveManager;
 import com.yodatowers.logic.WeaponToggleButton;
 
@@ -48,6 +49,7 @@ public class Main extends Game implements ApplicationListener {
     WaveManager waveManager;
     int yodaHealth;
     volatile boolean isGameOver;
+    ShopManager shop;
 
     @Override
     public void create() {
@@ -80,7 +82,7 @@ public class Main extends Game implements ApplicationListener {
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
-
+        shop = new ShopManager();
         waveManager = new WaveManager(viewport, palpTexture);
 
         new Thread(() -> {
@@ -102,7 +104,26 @@ public class Main extends Game implements ApplicationListener {
     }
 
     private void input() {
+
         if (isGameOver) return;
+
+        if (waveManager.isInShopPhase()) {
+
+            if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                shop.rerollShop();
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+                if (!shop.getOfferings().isEmpty()) shop.buyTower(0, 1);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+                if (shop.getOfferings().size() > 1) shop.buyTower(1, 2);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                waveManager.startNextWave();
+            }
+
+            return;
+        }
 
         Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
         handleWeaponButtonInput(mousePos);
@@ -110,9 +131,6 @@ public class Main extends Game implements ApplicationListener {
         yodaTower.updateAim(mousePos);
         yodaTower.clampToViewport(viewport);
 
-        if (waveManager.isInShopPhase() && Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            waveManager.startNextWave();
-        }
     }
 
     private void handleWeaponButtonInput(Vector2 mousePos) {
@@ -176,7 +194,7 @@ public class Main extends Game implements ApplicationListener {
                 continue;
             }
 
-            int defeatedEnemies = projectile.handleEnemyCollisions(enemies, explosionEffects);
+            int defeatedEnemies = projectile.handleEnemyCollisions(enemies, explosionEffects, shop);
             for (int defeated = 0; defeated < defeatedEnemies; defeated++) {
                 palpDeathSound.play();
             }
