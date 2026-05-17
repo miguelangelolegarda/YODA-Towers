@@ -1,16 +1,16 @@
 package com.yodatowers.UI;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.yodatowers.Main;
 import com.yodatowers.logic.GameScreen;
 
 public class Loading implements Screen{
     
-    private final Main game; 
+    private final Game game; 
     private float currentLoadingTime = 0f; // store how long loading screen has been shown
     private final float loadingTime = 5f; // Fixed time for loading
     
@@ -24,7 +24,7 @@ public class Loading implements Screen{
 
     private boolean paused = false;
 
-    public Loading(Main game) {
+    public Loading(Game game) {
         this.game = game;
         batch = new SpriteBatch();
         font = new BitmapFont();
@@ -43,9 +43,9 @@ public class Loading implements Screen{
         boolean finished = progress >= 1f; // finished when progress reaches 100%
         
         accumulator += delta;
-        if (accumulator >= step){ // update displayed progress periodically
+        if (accumulator >= step){ // print text based on step
             loadingText = "Loading: " + (int)(progress * 100) + "%";
-            System.out.println(loadingText);
+            System.out.println(loadingText); //REMOVE AFTER TESTING
             accumulator -= step;
         }
 
@@ -55,7 +55,7 @@ public class Loading implements Screen{
 
         if (finished){
             loadingText = "Loading Complete";
-            System.out.println("Loading Complete");
+            System.out.println("Loading Complete"); //REMOVE AFTER TESTING
         }
         
         return finished;
@@ -63,10 +63,10 @@ public class Loading implements Screen{
 
     @Override
     public void render(float delta) {
-        // call update every frame; if finished, switch to the GameScreen
+        // call update every frame. if finished, switch to the GameScreen
         boolean finished = update(delta);
         if (finished) {
-            game.setScreen(new GameScreen(game));
+            game.setScreen(new GameScreen());
         }
     }
 
@@ -86,13 +86,11 @@ public class Loading implements Screen{
 
     @Override
     public void pause() {
-        // mark as paused so update() stops advancing
         paused = true;
     }
 
     @Override
     public void resume() {
-        // resume loading progress
         paused = false;
     }
 

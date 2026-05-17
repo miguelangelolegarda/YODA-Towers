@@ -49,7 +49,7 @@ public class GameScreen implements Screen{ //modify extends and implements
     volatile boolean isGameOver;
 
     //PAUSE LOGIC
-    private volatile boolean paused = false; // toggled by render() on ESC and read by the logic thread
+    private volatile boolean paused = false; 
     GlyphLayout pausedTitleLayout;
     GlyphLayout pausedHintLayout;
     private ShapeRenderer shape;
@@ -312,14 +312,12 @@ public class GameScreen implements Screen{ //modify extends and implements
 
     @Override
     public void pause() {
-        // Set the paused flag to true and log the state change
         paused = true;
         System.out.println("Game Paused");
     }
 
     @Override
     public void resume() {
-        // Set the paused flag to false and log the state change
         paused = false;
         System.out.println("Game Resumed");
     }
