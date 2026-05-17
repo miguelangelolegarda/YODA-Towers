@@ -19,6 +19,7 @@ public class YodaTower extends Tower {
     private final Texture saberTexture;
     private final CopyOnWriteArrayList<SubTower> subTowers;
     private final Vector2 aimPoint;
+    private final int maxSlots;
 
     private boolean autoAimEnabled = false;
 
@@ -26,7 +27,7 @@ public class YodaTower extends Tower {
         super(0.3f, 6f);
 
         this.saberTexture = saberTexture;
-
+        this.maxSlots = 5;
         this.sprite = new Sprite(yodaTexture);
         this.sprite.setSize(1 / 2f, 3 / 4f);
 
@@ -85,8 +86,16 @@ public class YodaTower extends Tower {
         );
     }
 
-    public void addSubTower(SubTower subTower) {
-        subTowers.add(subTower);
+    public boolean addSubTower(SubTower subTower) {
+        if(subTowers.size() < maxSlots){
+            subTowers.add(subTower);
+            return true;
+        }
+        return false;
+    }
+
+    public void removeSubTower(SubTower subTower) {
+        subTowers.remove(subTower);
     }
 
     public void updateAim(Vector2 mousePosition) {

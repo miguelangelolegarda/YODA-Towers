@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -50,15 +51,26 @@ public class Main extends Game implements ApplicationListener {
     int yodaHealth;
     volatile boolean isGameOver;
     ShopManager shop;
+    AssetManager assetManager;
 
     @Override
     public void create() {
-        backgroundTexture = new Texture("background.jpg");
-        yodaTexture = new Texture("legoYoda.png");
-        palpTexture = new Texture("palpatine.png");
-        saberTexture = new Texture("greenSaber.png");
-        yodaDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-yoda-death-sound-effect.mp3"));
-        palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
+        // Asset manager for easier creation of textures, sounds, etc.
+        assetManager = new AssetManager();
+        assetManager.load("background.jpg", Texture.class);
+        assetManager.load("legoYoda.png", Texture.class);
+        assetManager.load("palpatine.png", Texture.class);
+        assetManager.load("greenSaber.png", Texture.class);
+        assetManager.load("lego-yoda-death-sound-effect.mp3", Sound.class);
+        assetManager.load("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
+        assetManager.finishLoading();
+
+        backgroundTexture = assetManager.get("background.jpg", Texture.class);
+        yodaTexture = assetManager.get("legoYoda.png", Texture.class);
+        palpTexture = assetManager.get("palpatine.png", Texture.class);
+        saberTexture = assetManager.get("greenSaber.png", Texture.class);
+        yodaDeathSound = assetManager.get("lego-yoda-death-sound-effect.mp3", Sound.class);
+        palpDeathSound = assetManager.get("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
 
         yodaHealth = 3;
         isGameOver = false;
@@ -82,7 +94,7 @@ public class Main extends Game implements ApplicationListener {
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
-        shop = new ShopManager();
+        shop = new ShopManager(yodaTower, assetManager);
         waveManager = new WaveManager(viewport, palpTexture);
 
         new Thread(() -> {

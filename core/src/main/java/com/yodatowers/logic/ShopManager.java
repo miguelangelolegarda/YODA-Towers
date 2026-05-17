@@ -1,18 +1,28 @@
 package com.yodatowers.logic;
 
 import java.util.ArrayList;
+
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.yodatowers.entities.subtowers.*;
+import com.yodatowers.entities.towers.YodaTower;
 
 public class ShopManager {
     private int playerGold;
     private int rerollCost;
     private ArrayList<String> currentShopOfferings; // Temporary Strings until @JJ finishes SubTower classes
+    private ArrayList<SubTower> shopOfferingsValues;
+    private YodaTower yodaTower;
+    private AssetManager assetManager;
 
-    public ShopManager() {
+    public ShopManager(YodaTower yodaTower, AssetManager assetManager) {
         this.playerGold = 10; // Starting gold; Change as needed
         this.rerollCost = 2;
         this.currentShopOfferings = new ArrayList<>();
+        this.shopOfferingsValues = new ArrayList<>();
+        this.yodaTower = yodaTower;
+        this.assetManager = assetManager;
     }
 
     // Econ
@@ -35,9 +45,18 @@ public class ShopManager {
         for (int i = 0; i < 5; i++) {
             // TODO: Replace these strings with actual SubTower classes later
             int rng = MathUtils.random(1, 100);
-            if (rng < 50) currentShopOfferings.add("Basic Battle Droid (1-Cost)");
-            else if (rng < 80) currentShopOfferings.add("Clone Trooper (1-Cost)");
-            else currentShopOfferings.add("Heavy Battle Droid (2-Cost)");
+            if (rng < 50) {
+                currentShopOfferings.add("Basic Battle Droid (1-Cost)");
+                shopOfferingsValues.add(new RocketLauncher(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
+            }
+            else if (rng < 80) {
+                currentShopOfferings.add("Clone Trooper (1-Cost)");
+                shopOfferingsValues.add(new BlasterRifle(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
+            }
+            else {
+                currentShopOfferings.add("Heavy Battle Droid (2-Cost)");}
+                shopOfferingsValues.add(new BlasterRifle(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
+
         }
         System.out.println("Welcome to the Shop! Offerings: " + currentShopOfferings);
     }
@@ -56,14 +75,17 @@ public class ShopManager {
     public boolean buyTower(int shopSlotIndex, int towerCost) {
         if (playerGold >= towerCost) {
             playerGold -= towerCost;
-            String boughtTower = currentShopOfferings.remove(shopSlotIndex);
 
-            System.out.println("Bought " + boughtTower + "! Gold left: " + playerGold);
-
-            // TODO: Pass bought tower to the Triple-Up logic
-            checkTripleUpLogic(boughtTower);
-
-            return true;
+            if(yodaTower.addSubTower(shopOfferingsValues.get(shopSlotIndex))){
+                String boughtTower = currentShopOfferings.remove(shopSlotIndex);
+                System.out.println("Bought " + boughtTower + "! Gold left: " + playerGold);
+                // TODO: Pass bought tower to the Triple-Up logic
+                checkTripleUpLogic(boughtTower);
+                return true;
+            }
+            else {
+                System.out.println("Subtower slots full! Remove a subtower to buy this");
+            }
         }
         System.out.println("Not enough gold!");
         return false;
