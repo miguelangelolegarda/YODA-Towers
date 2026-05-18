@@ -20,16 +20,18 @@ public class YodaTower extends Tower {
     private final CopyOnWriteArrayList<SubTower> subTowers;
     private final Vector2 aimPoint;
     private final int maxSlots;
+    private int spread;
 
     private boolean autoAimEnabled = false;
 
     public YodaTower(Texture yodaTexture, Texture saberTexture, Viewport viewport) {
-        super(0.3f, 6f);
+        super(0.1f, 6f);
 
         this.saberTexture = saberTexture;
         this.maxSlots = 5;
         this.sprite = new Sprite(yodaTexture);
         this.sprite.setSize(1 / 2f, 3 / 4f);
+        this.spread = 1;
 
         this.sprite.setPosition(
             (viewport.getWorldWidth() / 2f) - 1 / 4f,
@@ -84,6 +86,37 @@ public class YodaTower extends Tower {
                 range
             )
         );
+        // Add spreading fire. Every one spread adds a projectile to the right and left of the aim
+        if(spread > 1){
+            for (int i = 1; i < spread; i++) {
+                projectiles.add(
+                    new Projectile(
+                        saberTexture,
+                        origin.x,
+                        origin.y,
+                        1 / 13f,
+                        1 / 2f,
+                        10f,
+                        angle+(i * 10),
+                        1,
+                        range
+                    )
+                );
+                projectiles.add(
+                    new Projectile(
+                        saberTexture,
+                        origin.x,
+                        origin.y,
+                        1 / 13f,
+                        1 / 2f,
+                        10f,
+                        angle-(i * 10),
+                        1,
+                        range
+                    )
+                );
+            }
+        }
     }
 
     public boolean addSubTower(SubTower subTower) {
@@ -119,6 +152,10 @@ public class YodaTower extends Tower {
         Vector2 origin = getCenter();
         Vector2 targetPoint = autoAimEnabled ? enemyCenter(target) : aimPoint;
         return MathUtils.atan2(targetPoint.y - origin.y, targetPoint.x - origin.x) * MathUtils.radiansToDegrees;
+    }
+
+    public void addSpread(int spread){
+        this.spread += spread;
     }
 
     public boolean isAutoAimEnabled() {

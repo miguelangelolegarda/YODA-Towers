@@ -74,7 +74,7 @@ public class GameScreen implements Screen {
         yodaDeathSound = assetManager.get("lego-yoda-death-sound-effect.mp3", Sound.class);
         palpDeathSound = assetManager.get("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
 
-        yodaHealth = 3;
+        yodaHealth = 1000;
         isGameOver = false;
 
         spriteBatch = new SpriteBatch();
@@ -91,8 +91,11 @@ public class GameScreen implements Screen {
         yodaTower = new YodaTower(yodaTexture, saberTexture, viewport);
         blasterRifle = new BlasterRifle(yodaTower, saberTexture);
         rocketLauncher = new RocketLauncher(yodaTower, saberTexture);
+
+        // Temporary starting buffs for testing
         yodaTower.addSubTower(blasterRifle);
         yodaTower.addSubTower(rocketLauncher);
+        yodaTower.addSpread(4);
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));

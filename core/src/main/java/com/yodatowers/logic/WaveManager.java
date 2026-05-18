@@ -31,7 +31,7 @@ public class WaveManager {
         this.spawnTimer = 0f;
         this.inShopPhase = false;
         this.waveFull = false;
-        this.waveDifficulty = 200;
+        this.waveDifficulty = 5000;
         this.currentValue = 0;
     }
 
@@ -45,7 +45,7 @@ public class WaveManager {
         //The closer the timer gets to 60 seconds, the faster enemies spawn
         // Capped @ enemies per 0.3 seconds
 //        float spawnCooldown = MathUtils.clamp(1.5f - (waveTimer / 60f), 0.3f, 1.5f);
-        float spawnCooldown = 1.0f;
+        float spawnCooldown = 0.0000001f;
 
         if (spawnTimer >= spawnCooldown && !waveFull) {
             spawnTimer = 0;
