@@ -2,7 +2,6 @@ package com.yodatowers.logic;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
@@ -54,11 +53,6 @@ public class GameScreen implements Screen{ //modify extends and implements
     GlyphLayout pausedHintLayout;
     private ShapeRenderer shape;
 
-    private final Game game;
-
-    public GameScreen(Game game) {
-        this.game = game;
-    }
 
     @Override
     public void show() { //show instead of create
