@@ -9,11 +9,14 @@ import com.badlogic.gdx.math.Vector2;
 import com.yodatowers.effects.ExplosionEffect;
 import com.yodatowers.entities.enemies.Enemy;
 import com.yodatowers.logic.ShopManager;
+import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Intersector;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Projectile {
     protected Sprite sprite;
+    protected Polygon hitbox;
     protected float speed;
     protected float angleRadians;
     protected int damage;
@@ -28,6 +31,17 @@ public class Projectile {
         this.sprite.setOriginCenter();
         this.sprite.setPosition(x - width / 2f, y - height / 2f);
         this.sprite.setRotation(angleDegrees);
+
+        // --- CREATE ROTATING HITBOX ---
+        this.hitbox = new Polygon(new float[]{
+            0, 0,           // Bottom Left
+            width, 0,       // Bottom Right
+            width, height,  // Top Right
+            0, height       // Top Left
+        });
+        this.hitbox.setOrigin(width / 2f, height / 2f);
+        this.hitbox.setPosition(sprite.getX(), sprite.getY());
+        this.hitbox.setRotation(angleDegrees); // hitbox rotates with sprite
 
         this.speed = speed;
         this.angleRadians = (float) Math.toRadians(angleDegrees);
@@ -50,6 +64,7 @@ public class Projectile {
         float yMovement = speed * (float) Math.sin(angleRadians) * delta;
 
         sprite.translate(xMovement, yMovement);
+        hitbox.setPosition(sprite.getX(), sprite.getY());
 
         // Track how far it has gone using the pyth theorem?? MAAAAA change this if di tama ung formula
         float movementDistance = (float) Math.sqrt(xMovement * xMovement + yMovement * yMovement);
@@ -61,7 +76,7 @@ public class Projectile {
 
     public int handleEnemyCollisions(CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects, ShopManager shop) {
         for (Enemy enemy : enemies) {
-            if (getBounds().overlaps(enemy.getBounds())) {
+            if (Intersector.overlapConvexPolygons(this.getHitbox(), enemy.getHitbox())) {
                 return onEnemyHit(enemy, enemies, effects, shop);
             }
         }
@@ -123,4 +138,8 @@ public class Projectile {
     public float getHeight() {
         return sprite.getHeight();
     }
+
+    public Polygon getHitbox() { return hitbox; }
+
+    public void setActive(boolean active) { this.active = active; }
 }
