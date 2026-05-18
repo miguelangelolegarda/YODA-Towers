@@ -14,8 +14,12 @@ public class RocketProjectile extends Projectile {
     private final float explosionRadius;
 
     public RocketProjectile(Texture texture, float x, float y, float angleDegrees) {
-        super(texture, x, y, 1 / 8f, 1 / 2f, 5f, angleDegrees, 2, 8f);
-        this.explosionRadius = 0.7f;
+        this(texture, x, y, angleDegrees, 2, 8f, 5f, 0.7f);
+    }
+
+    public RocketProjectile(Texture texture, float x, float y, float angleDegrees, int damage, float maxRange, float speed, float explosionRadius) {
+        super(texture, x, y, 1 / 8f, 1 / 2f, speed, angleDegrees, damage, maxRange);
+        this.explosionRadius = explosionRadius;
         setColor(Color.ORANGE);
     }
 

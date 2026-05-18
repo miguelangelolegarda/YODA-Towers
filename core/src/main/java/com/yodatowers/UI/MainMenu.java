@@ -1,4 +1,4 @@
-package com.yodatowers.UI;
+package com.yodatowers.ui;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;

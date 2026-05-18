@@ -10,7 +10,9 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.yodatowers.entities.enemies.Enemy;
 import com.yodatowers.entities.projectiles.Projectile;
 import com.yodatowers.entities.subtowers.SubTower;
+import com.yodatowers.factions.FactionManager;
 
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class YodaTower extends Tower {
@@ -18,6 +20,7 @@ public class YodaTower extends Tower {
     private final Sprite sprite;
     private final Texture saberTexture;
     private final CopyOnWriteArrayList<SubTower> subTowers;
+    private final FactionManager factionManager;
     private final Vector2 aimPoint;
     private final int maxSlots;
     private int spread;
@@ -25,10 +28,10 @@ public class YodaTower extends Tower {
     private boolean autoAimEnabled = false;
 
     public YodaTower(Texture yodaTexture, Texture saberTexture, Viewport viewport) {
-        super(0.1f, 6f);
+        super(10f, 6f);
 
         this.saberTexture = saberTexture;
-        this.maxSlots = 5;
+        this.maxSlots = 6;
         this.sprite = new Sprite(yodaTexture);
         this.sprite.setSize(1 / 2f, 3 / 4f);
         this.spread = 1;
@@ -41,6 +44,7 @@ public class YodaTower extends Tower {
         this.sprite.setOriginCenter();
 
         this.subTowers = new CopyOnWriteArrayList<>();
+        this.factionManager = new FactionManager();
 
         this.aimPoint = new Vector2(getCenter());
     }
@@ -51,10 +55,10 @@ public class YodaTower extends Tower {
         CopyOnWriteArrayList<Enemy> enemies,
         CopyOnWriteArrayList<Projectile> projectiles
     ) {
+        factionManager.rebuild(subTowers);
         super.update(delta, enemies, projectiles);
-
         for (SubTower subTower : subTowers) {
-            subTower.update(delta, enemies, projectiles);
+            subTower.update(delta, enemies, projectiles, factionManager);
         }
     }
 
@@ -129,6 +133,14 @@ public class YodaTower extends Tower {
 
     public void removeSubTower(SubTower subTower) {
         subTowers.remove(subTower);
+    }
+
+    public List<SubTower> getSubTowers() {
+        return subTowers;
+    }
+
+    public FactionManager getFactionManager() {
+        return factionManager;
     }
 
     public void updateAim(Vector2 mousePosition) {

@@ -5,7 +5,13 @@ import java.util.ArrayList;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
-import com.yodatowers.entities.subtowers.*;
+import com.yodatowers.entities.subtowers.BasicCloneTrooper;
+import com.yodatowers.entities.subtowers.CloneCommando;
+import com.yodatowers.entities.subtowers.CloneRocketTrooper;
+import com.yodatowers.entities.subtowers.RebelScoutTrooper;
+import com.yodatowers.entities.subtowers.RebelTrooper;
+import com.yodatowers.entities.subtowers.ResistanceOfficer;
+import com.yodatowers.entities.subtowers.SubTower;
 import com.yodatowers.entities.towers.YodaTower;
 
 public class ShopManager {
@@ -42,25 +48,41 @@ public class ShopManager {
     // Display
     public void generateShop() {
         currentShopOfferings.clear();
+        shopOfferingsValues.clear();
 
         // Randomly pull 5 items to show the player
         for (int i = 0; i < 5; i++) {
-            // TODO: Replace these strings with actual SubTower classes later
-            int rng = MathUtils.random(1, 100);
-            if (rng < 50) {
-                currentShopOfferings.add("Basic Battle Droid (1-Cost)");
-                shopOfferingsValues.add(new RocketLauncher(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
-            }
-            else if (rng < 80) {
-                currentShopOfferings.add("Clone Trooper (1-Cost)");
-                shopOfferingsValues.add(new BlasterRifle(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
-            }
-            else {
-                currentShopOfferings.add("Heavy Battle Droid (2-Cost)");}
-                shopOfferingsValues.add(new BlasterRifle(yodaTower, assetManager.get("greenSaber.png", Texture.class)));
-
+            SubTower offering = createRandomSubTower();
+            currentShopOfferings.add(offering.getName() + " (" + offering.getCost() + "-Cost)");
+            shopOfferingsValues.add(offering);
         }
         System.out.println("Welcome to the Shop! Offerings: " + currentShopOfferings);
+    }
+
+    private SubTower createRandomSubTower() {
+        int rng = MathUtils.random(0, 5);
+        switch (rng) {
+            case 0:
+                return new RebelTrooper(yodaTower, rebelLaserTexture());
+            case 1:
+                return new RebelScoutTrooper(yodaTower, rebelLaserTexture());
+            case 2:
+                return new ResistanceOfficer(yodaTower, rebelLaserTexture());
+            case 3:
+                return new BasicCloneTrooper(yodaTower, republicLaserTexture());
+            case 4:
+                return new CloneRocketTrooper(yodaTower, republicLaserTexture());
+            default:
+                return new CloneCommando(yodaTower, republicLaserTexture());
+        }
+    }
+
+    private Texture rebelLaserTexture() {
+        return assetManager.get("greenLaserBolt.png", Texture.class);
+    }
+
+    private Texture republicLaserTexture() {
+        return assetManager.get("blueLaserBolt.png", Texture.class);
     }
 
     // Transactions
@@ -75,11 +97,14 @@ public class ShopManager {
     }
 
     public boolean buyTower(int shopSlotIndex, int towerCost) {
-        if (playerGold >= towerCost) {
-            playerGold -= towerCost;
+        SubTower selectedTower = shopOfferingsValues.get(shopSlotIndex);
+        int actualCost = selectedTower.getCost();
+        if (playerGold >= actualCost) {
+            playerGold -= actualCost;
 
-            if(yodaTower.addSubTower(shopOfferingsValues.get(shopSlotIndex))){
+            if(yodaTower.addSubTower(selectedTower)){
                 String boughtTower = currentShopOfferings.remove(shopSlotIndex);
+                shopOfferingsValues.remove(shopSlotIndex);
                 System.out.println("Bought " + boughtTower + "! Gold left: " + playerGold);
                 // TODO: Pass bought tower to the Triple-Up logic
                 checkTripleUpLogic(boughtTower);

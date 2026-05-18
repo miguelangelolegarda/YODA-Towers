@@ -18,10 +18,15 @@ import com.yodatowers.Main;
 import com.yodatowers.effects.ExplosionEffect;
 import com.yodatowers.entities.enemies.Enemy;
 import com.yodatowers.entities.projectiles.Projectile;
-import com.yodatowers.entities.subtowers.BlasterRifle;
-import com.yodatowers.entities.subtowers.RocketLauncher;
+import com.yodatowers.entities.subtowers.BasicCloneTrooper;
+import com.yodatowers.entities.subtowers.CloneCommando;
+import com.yodatowers.entities.subtowers.CloneRocketTrooper;
+import com.yodatowers.entities.subtowers.RebelScoutTrooper;
+import com.yodatowers.entities.subtowers.RebelTrooper;
+import com.yodatowers.entities.subtowers.ResistanceOfficer;
 import com.yodatowers.entities.subtowers.SubTower;
 import com.yodatowers.entities.towers.YodaTower;
+import com.yodatowers.factions.FactionType;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -32,6 +37,8 @@ public class GameScreen implements Screen {
     Texture yodaTexture;
     Texture palpTexture;
     Texture saberTexture;
+    Texture rebelLaserTexture;
+    Texture republicLaserTexture;
     Sound yodaDeathSound;
     Sound palpDeathSound;
     SpriteBatch spriteBatch;
@@ -39,12 +46,16 @@ public class GameScreen implements Screen {
     BitmapFont font;
     FitViewport viewport;
     YodaTower yodaTower;
-    SubTower blasterRifle;
-    SubTower rocketLauncher;
+    SubTower rebelTrooper;
+    SubTower rebelScoutTrooper;
+    SubTower resistanceOfficer;
+    SubTower basicCloneTrooper;
+    SubTower cloneRocketTrooper;
+    SubTower cloneCommando;
     CopyOnWriteArrayList<Enemy> enemies;
     CopyOnWriteArrayList<Projectile> projectiles;
     CopyOnWriteArrayList<ExplosionEffect> explosionEffects;
-    CopyOnWriteArrayList<WeaponToggleButton> weaponButtons;
+    CopyOnWriteArrayList<SubTowerToggleButton> subTowerButtons;
     WaveManager waveManager;
     int yodaHealth;
     volatile boolean isGameOver;
@@ -63,6 +74,8 @@ public class GameScreen implements Screen {
         assetManager.load("legoYoda.png", Texture.class);
         assetManager.load("palpatine.png", Texture.class);
         assetManager.load("greenSaber.png", Texture.class);
+        assetManager.load("greenLaserBolt.png", Texture.class);
+        assetManager.load("blueLaserBolt.png", Texture.class);
         assetManager.load("lego-yoda-death-sound-effect.mp3", Sound.class);
         assetManager.load("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
         assetManager.finishLoading();
@@ -71,6 +84,8 @@ public class GameScreen implements Screen {
         yodaTexture = assetManager.get("legoYoda.png", Texture.class);
         palpTexture = assetManager.get("palpatine.png", Texture.class);
         saberTexture = assetManager.get("greenSaber.png", Texture.class);
+        rebelLaserTexture = assetManager.get("greenLaserBolt.png", Texture.class);
+        republicLaserTexture = assetManager.get("blueLaserBolt.png", Texture.class);
         yodaDeathSound = assetManager.get("lego-yoda-death-sound-effect.mp3", Sound.class);
         palpDeathSound = assetManager.get("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
 
@@ -86,19 +101,32 @@ public class GameScreen implements Screen {
         enemies = new CopyOnWriteArrayList<>();
         projectiles = new CopyOnWriteArrayList<>();
         explosionEffects = new CopyOnWriteArrayList<>();
-        weaponButtons = new CopyOnWriteArrayList<>();
+        subTowerButtons = new CopyOnWriteArrayList<>();
 
         yodaTower = new YodaTower(yodaTexture, saberTexture, viewport);
-        blasterRifle = new BlasterRifle(yodaTower, saberTexture);
-        rocketLauncher = new RocketLauncher(yodaTower, saberTexture);
+        rebelTrooper = new RebelTrooper(yodaTower, rebelLaserTexture);
+        rebelScoutTrooper = new RebelScoutTrooper(yodaTower, rebelLaserTexture);
+        resistanceOfficer = new ResistanceOfficer(yodaTower, rebelLaserTexture);
+        basicCloneTrooper = new BasicCloneTrooper(yodaTower, republicLaserTexture);
+        cloneRocketTrooper = new CloneRocketTrooper(yodaTower, republicLaserTexture);
+        cloneCommando = new CloneCommando(yodaTower, republicLaserTexture);
 
-        // Temporary starting buffs for testing
-        yodaTower.addSubTower(blasterRifle);
-        yodaTower.addSubTower(rocketLauncher);
+        // TODO: Replace this temporary full loadout with shop purchases, bench state, and run inventory.
+        yodaTower.addSubTower(rebelTrooper);
+        yodaTower.addSubTower(rebelScoutTrooper);
+        yodaTower.addSubTower(resistanceOfficer);
+        yodaTower.addSubTower(basicCloneTrooper);
+        yodaTower.addSubTower(cloneRocketTrooper);
+        yodaTower.addSubTower(cloneCommando);
         yodaTower.addSpread(4);
+        yodaTower.getFactionManager().rebuild(yodaTower.getSubTowers());
 
-        weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
-        weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
+        subTowerButtons.add(new SubTowerToggleButton(0.15f, 0.42f, 2.45f, 0.28f, rebelTrooper));
+        subTowerButtons.add(new SubTowerToggleButton(2.75f, 0.42f, 2.45f, 0.28f, rebelScoutTrooper));
+        subTowerButtons.add(new SubTowerToggleButton(5.35f, 0.42f, 2.45f, 0.28f, resistanceOfficer));
+        subTowerButtons.add(new SubTowerToggleButton(0.15f, 0.08f, 2.45f, 0.28f, basicCloneTrooper));
+        subTowerButtons.add(new SubTowerToggleButton(2.75f, 0.08f, 2.45f, 0.28f, cloneRocketTrooper));
+        subTowerButtons.add(new SubTowerToggleButton(5.35f, 0.08f, 2.45f, 0.28f, cloneCommando));
 
         waveManager = new WaveManager(viewport, palpTexture);
         shop = new ShopManager(yodaTower, assetManager, waveManager);
@@ -141,19 +169,19 @@ public class GameScreen implements Screen {
         }
 
         Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-        handleWeaponButtonInput(mousePos);
+        handleSubTowerButtonInput(mousePos);
 
         yodaTower.updateAim(mousePos);
         yodaTower.clampToViewport(viewport);
     }
 
-    private void handleWeaponButtonInput(Vector2 mousePos) {
+    private void handleSubTowerButtonInput(Vector2 mousePos) {
         if (!Gdx.input.justTouched()) {
             return;
         }
 
-        for (WeaponToggleButton weaponButton : weaponButtons) {
-            if (weaponButton.tryToggle(mousePos)) {
+        for (SubTowerToggleButton subTowerButton : subTowerButtons) {
+            if (subTowerButton.tryToggle(mousePos)) {
                 return;
             }
         }
@@ -259,8 +287,8 @@ public class GameScreen implements Screen {
         for (ExplosionEffect explosionEffect : explosionEffects) {
             explosionEffect.draw(shapeRenderer);
         }
-        for (WeaponToggleButton weaponButton : weaponButtons) {
-            weaponButton.drawBackground(shapeRenderer);
+        for (SubTowerToggleButton subTowerButton : subTowerButtons) {
+            subTowerButton.drawBackground(shapeRenderer);
         }
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
@@ -269,10 +297,34 @@ public class GameScreen implements Screen {
     private void drawUiLabels() {
         spriteBatch.begin();
         font.setColor(Color.WHITE);
-        for (WeaponToggleButton weaponButton : weaponButtons) {
-            weaponButton.drawLabel(spriteBatch, font);
+        for (SubTowerToggleButton subTowerButton : subTowerButtons) {
+            subTowerButton.drawLabel(spriteBatch, font);
         }
+        drawFactionDebugPanel();
         spriteBatch.end();
+    }
+
+    private void drawFactionDebugPanel() {
+        float x = 0.15f;
+        float y = 4.78f;
+        font.setColor(Color.WHITE);
+        font.draw(spriteBatch, "Faction Debug", x, y);
+        font.draw(spriteBatch, "Rebel Count: " + yodaTower.getFactionManager().getContribution(FactionType.REBEL), x, y - 0.18f);
+        font.draw(spriteBatch, "Republic Count: " + yodaTower.getFactionManager().getContribution(FactionType.REPUBLIC), x, y - 0.36f);
+        font.draw(spriteBatch, "Jedi Count: " + yodaTower.getFactionManager().getContribution(FactionType.JEDI), x, y - 0.54f);
+        font.draw(spriteBatch, "Light Side Count: " + yodaTower.getFactionManager().getLightSideCount(), x, y - 0.72f);
+
+        drawThresholdRow("Rebel", FactionType.REBEL, x, y - 0.98f);
+        drawThresholdRow("Republic", FactionType.REPUBLIC, x, y - 1.16f);
+    }
+
+    private void drawThresholdRow(String label, FactionType factionType, float x, float y) {
+        StringBuilder builder = new StringBuilder(label).append(": ");
+        for (Integer threshold : yodaTower.getFactionManager().getBuffState().getThresholds(factionType).keySet()) {
+            boolean active = yodaTower.getFactionManager().getBuffState().getThresholds(factionType).get(threshold);
+            builder.append("[").append(threshold).append("] ").append(active ? "Active" : "Inactive").append(" ");
+        }
+        font.draw(spriteBatch, builder.toString(), x, y);
     }
 
     @Override
@@ -303,6 +355,8 @@ public class GameScreen implements Screen {
         yodaTexture.dispose();
         palpTexture.dispose();
         saberTexture.dispose();
+        rebelLaserTexture.dispose();
+        republicLaserTexture.dispose();
         yodaDeathSound.dispose();
         palpDeathSound.dispose();
     }

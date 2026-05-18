@@ -31,7 +31,7 @@ public class WaveManager {
         this.spawnTimer = 0f;
         this.inShopPhase = false;
         this.waveFull = false;
-        this.waveDifficulty = 5000;
+        this.waveDifficulty = 500;
         this.currentValue = 0;
     }
 

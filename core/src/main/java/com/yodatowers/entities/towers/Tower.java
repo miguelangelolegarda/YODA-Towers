@@ -4,9 +4,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.yodatowers.entities.enemies.Enemy;
 import com.yodatowers.entities.projectiles.Projectile;
-import com.yodatowers.entities.subtowers.SubTower;
 
-import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class Tower {
