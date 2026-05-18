@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 
 public class LaserProjectile extends Projectile {
     public LaserProjectile(Texture texture, float x, float y, float angleDegrees) {
-        super(texture, x, y, 1 / 16f, 2 / 5f, 12f, angleDegrees, 1, 8f);
+        super(texture, x, y, 1 / 64f, 2 / 20f, 4f, angleDegrees, 1, 8f);
         setColor(Color.CYAN);
     }
 }

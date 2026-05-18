@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public abstract class Enemy {
     protected Sprite sprite; // Visual
-    protected Rectangle bounds; //Hitbox (Colliusion)
+    protected Rectangle bounds; //Hitbox (Collision)
     protected float speed; // Movement units/seconds
     protected int health; // Hit points
     protected int value; // Value for determining how much it adds to a wave

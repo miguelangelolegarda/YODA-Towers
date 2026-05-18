@@ -30,12 +30,12 @@ public class YodaTower extends Tower {
         this.saberTexture = saberTexture;
         this.maxSlots = 5;
         this.sprite = new Sprite(yodaTexture);
-        this.sprite.setSize(1 / 2f, 3 / 4f);
+        this.sprite.setSize(1 / 6f, 3 / 12f);
         this.spread = 1;
 
         this.sprite.setPosition(
-            (viewport.getWorldWidth() / 2f) - 1 / 4f,
-            (viewport.getWorldHeight() / 2f) - 3 / 8f
+            (viewport.getWorldWidth() / 2f) - 1 / 12f,
+            (viewport.getWorldHeight() / 2f) - 3 / 24f
         );
 
         this.sprite.setOriginCenter();
@@ -80,7 +80,7 @@ public class YodaTower extends Tower {
                 origin.y,
                 1 / 13f,
                 1 / 2f,
-                10f,
+                3f,
                 angle,
                 1,
                 range
@@ -96,7 +96,7 @@ public class YodaTower extends Tower {
                         origin.y,
                         1 / 13f,
                         1 / 2f,
-                        10f,
+                        3f,
                         angle+(i * 10),
                         1,
                         range
@@ -109,7 +109,7 @@ public class YodaTower extends Tower {
                         origin.y,
                         1 / 13f,
                         1 / 2f,
-                        10f,
+                        3f,
                         angle-(i * 10),
                         1,
                         range

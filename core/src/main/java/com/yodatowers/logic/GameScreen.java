@@ -11,12 +11,17 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.yodatowers.Main;
 import com.yodatowers.effects.ExplosionEffect;
+import com.yodatowers.entities.enemies.BasicEnemy;
+import com.yodatowers.entities.enemies.BossEnemy;
 import com.yodatowers.entities.enemies.Enemy;
+import com.yodatowers.entities.obstructions.Obstruction;
+import com.yodatowers.entities.obstructions.Rock;
 import com.yodatowers.entities.projectiles.Projectile;
 import com.yodatowers.entities.subtowers.BlasterRifle;
 import com.yodatowers.entities.subtowers.RocketLauncher;
@@ -32,6 +37,7 @@ public class GameScreen implements Screen {
     Texture yodaTexture;
     Texture palpTexture;
     Texture saberTexture;
+    Texture rockTexture;
     Sound yodaDeathSound;
     Sound palpDeathSound;
     SpriteBatch spriteBatch;
@@ -45,6 +51,7 @@ public class GameScreen implements Screen {
     CopyOnWriteArrayList<Projectile> projectiles;
     CopyOnWriteArrayList<ExplosionEffect> explosionEffects;
     CopyOnWriteArrayList<WeaponToggleButton> weaponButtons;
+    CopyOnWriteArrayList<Obstruction> obstructions;
     WaveManager waveManager;
     int yodaHealth;
     volatile boolean isGameOver;
@@ -63,6 +70,7 @@ public class GameScreen implements Screen {
         assetManager.load("legoYoda.png", Texture.class);
         assetManager.load("palpatine.png", Texture.class);
         assetManager.load("greenSaber.png", Texture.class);
+        assetManager.load("rock.png", Texture.class);
         assetManager.load("lego-yoda-death-sound-effect.mp3", Sound.class);
         assetManager.load("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
         assetManager.finishLoading();
@@ -71,10 +79,11 @@ public class GameScreen implements Screen {
         yodaTexture = assetManager.get("legoYoda.png", Texture.class);
         palpTexture = assetManager.get("palpatine.png", Texture.class);
         saberTexture = assetManager.get("greenSaber.png", Texture.class);
+        rockTexture = assetManager.get("rock.png", Texture.class);
         yodaDeathSound = assetManager.get("lego-yoda-death-sound-effect.mp3", Sound.class);
         palpDeathSound = assetManager.get("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
 
-        yodaHealth = 1000;
+        yodaHealth = 10000;
         isGameOver = false;
 
         spriteBatch = new SpriteBatch();
@@ -87,15 +96,23 @@ public class GameScreen implements Screen {
         projectiles = new CopyOnWriteArrayList<>();
         explosionEffects = new CopyOnWriteArrayList<>();
         weaponButtons = new CopyOnWriteArrayList<>();
+        obstructions = new CopyOnWriteArrayList<>();
 
         yodaTower = new YodaTower(yodaTexture, saberTexture, viewport);
         blasterRifle = new BlasterRifle(yodaTower, saberTexture);
         rocketLauncher = new RocketLauncher(yodaTower, saberTexture);
 
+        // Create 4 randomly positioned obstructions
+//        int counter = 0;
+//        while(counter < 4){
+//            spawnObstructions();
+//            counter++;
+//        }
+
         // Temporary starting buffs for testing
         yodaTower.addSubTower(blasterRifle);
         yodaTower.addSubTower(rocketLauncher);
-        yodaTower.addSpread(4);
+        yodaTower.addSpread(1);
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
@@ -227,6 +244,34 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void spawnObstructions() {
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+        float offScreenBuffer = 2f;
+        float x = MathUtils.random(0, worldWidth);
+        float y = MathUtils.random(0, worldHeight);
+
+
+        // Randomly select 1 of the 3 obstructions, try implementing less chance for boss to spawn later
+        int obstructionType = MathUtils.random(0, 2);
+        Obstruction newObstruction;
+        switch(obstructionType) {
+            case 0: newObstruction = new Rock(rockTexture, x, y); break;
+//            case 1: newObstruction = new Rock(rockTexture, x, y); break;
+//            case 2: newObstruction = new Rock(rockTexture, x, y); break;s
+            default: newObstruction = new Rock(rockTexture, x, y); break;
+        }
+        for (Obstruction obstruction : obstructions) {
+            if (newObstruction.getBounds().overlaps(obstruction.getBounds())) {
+                return;
+            }
+        }
+        if((newObstruction.getBounds().overlaps(yodaTower.getBounds()))){
+            return;
+        }
+        obstructions.add(newObstruction);
+    }
+
     private void draw() {
         ScreenUtils.clear(Color.BLACK);
         viewport.apply();
@@ -244,6 +289,9 @@ public class GameScreen implements Screen {
         }
         for (Projectile projectile : projectiles) {
             projectile.draw(spriteBatch);
+        }
+        for (Obstruction obstruction : obstructions) {
+            obstruction.draw(spriteBatch);
         }
         spriteBatch.end();
 
