@@ -31,7 +31,7 @@ public class WaveManager {
         this.spawnTimer = 0f;
         this.inShopPhase = false;
         this.waveFull = false;
-        this.waveDifficulty = 7;
+        this.waveDifficulty = 200;
         this.currentValue = 0;
     }
 
@@ -58,7 +58,7 @@ public class WaveManager {
         if (waveFull && enemies.isEmpty()) {
             endWave();
         }
-        
+
     }
 
     private void spawnEnemy(CopyOnWriteArrayList<Enemy> enemies) {

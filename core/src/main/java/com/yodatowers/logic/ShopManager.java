@@ -15,14 +15,16 @@ public class ShopManager {
     private ArrayList<SubTower> shopOfferingsValues;
     private YodaTower yodaTower;
     private AssetManager assetManager;
+    private WaveManager waveManager;
 
-    public ShopManager(YodaTower yodaTower, AssetManager assetManager) {
+    public ShopManager(YodaTower yodaTower, AssetManager assetManager, WaveManager waveManager) {
         this.playerGold = 10; // Starting gold; Change as needed
         this.rerollCost = 2;
         this.currentShopOfferings = new ArrayList<>();
         this.shopOfferingsValues = new ArrayList<>();
         this.yodaTower = yodaTower;
         this.assetManager = assetManager;
+        this.waveManager = waveManager;
     }
 
     // Econ
@@ -96,6 +98,10 @@ public class ShopManager {
         // TODO: Look through Yoda's current inventory & if count == 3, delete them and give user a level 2 version
     }
 
+    // Exit Shop and move to next wave
+    public void exitShop(){
+        waveManager.startNextWave();
+    }
     // UI Getters
     public int getPlayerGold() {
         return playerGold;

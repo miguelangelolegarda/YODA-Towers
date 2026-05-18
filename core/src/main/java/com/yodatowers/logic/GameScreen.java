@@ -96,8 +96,9 @@ public class GameScreen implements Screen {
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
-        shop = new ShopManager(yodaTower, assetManager);
+
         waveManager = new WaveManager(viewport, palpTexture);
+        shop = new ShopManager(yodaTower, assetManager, waveManager);
 
         new Thread(() -> {
             while (!isGameOver) {
