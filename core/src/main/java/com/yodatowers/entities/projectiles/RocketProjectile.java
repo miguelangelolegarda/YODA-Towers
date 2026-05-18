@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.yodatowers.effects.ExplosionEffect;
 import com.yodatowers.entities.enemies.Enemy;
+import com.yodatowers.logic.ShopManager;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -19,7 +20,7 @@ public class RocketProjectile extends Projectile {
     }
 
     @Override
-    protected int onEnemyHit(Enemy enemy, CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects) {
+    protected int onEnemyHit(Enemy enemy, CopyOnWriteArrayList<Enemy> enemies, CopyOnWriteArrayList<ExplosionEffect> effects, ShopManager shop) {
         Vector2 explosionCenter = getCenter();
         for (Enemy nearbyEnemy : enemies) {
             Rectangle bounds = nearbyEnemy.getBounds();
@@ -33,6 +34,6 @@ public class RocketProjectile extends Projectile {
 
         active = false;
         effects.add(new ExplosionEffect(explosionCenter.x, explosionCenter.y, explosionRadius));
-        return removeDeadEnemies(enemies);
+        return removeDeadEnemies(enemies, shop);
     }
 }

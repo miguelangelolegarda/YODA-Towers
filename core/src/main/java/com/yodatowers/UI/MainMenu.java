@@ -16,17 +16,19 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.yodatowers.Main;
+
 
 //shows start button
 public class MainMenu implements Screen {
-    private final Game game;
+    private final Main game;
     private Stage stage;
     private Table table;
     private Texture buttonTexture;
     private BitmapFont buttonFont;
     private TextButton startButton;
 
-    public MainMenu(Game game) {
+    public MainMenu(Main game) {
         this.game = game;
     }
 
@@ -75,7 +77,7 @@ public class MainMenu implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
         stage.draw();
-    } 
+    }
 
     @Override
     public void resize (int width, int height) {
@@ -105,7 +107,7 @@ public class MainMenu implements Screen {
     }
 
 
-    
+
 
 
 }

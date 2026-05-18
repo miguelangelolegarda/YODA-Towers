@@ -1,21 +1,20 @@
 package com.yodatowers.logic;
 
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.yodatowers.Main;
 import com.yodatowers.effects.ExplosionEffect;
 import com.yodatowers.entities.enemies.Enemy;
 import com.yodatowers.entities.projectiles.Projectile;
@@ -24,8 +23,11 @@ import com.yodatowers.entities.subtowers.RocketLauncher;
 import com.yodatowers.entities.subtowers.SubTower;
 import com.yodatowers.entities.towers.YodaTower;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class GameScreen implements Screen{ //modify extends and implements
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class GameScreen implements Screen {
+    final Main game;
+
     Texture backgroundTexture;
     Texture yodaTexture;
     Texture palpTexture;
@@ -46,22 +48,31 @@ public class GameScreen implements Screen{ //modify extends and implements
     WaveManager waveManager;
     int yodaHealth;
     volatile boolean isGameOver;
+    ShopManager shop;
+    AssetManager assetManager;
 
-    //PAUSE LOGIC
-    private volatile boolean paused = false; 
-    GlyphLayout pausedTitleLayout;
-    GlyphLayout pausedHintLayout;
-    private ShapeRenderer shape;
-
+    public GameScreen(Main game) {
+        this.game = game;
+    }
 
     @Override
-    public void show() { //show instead of create
-        backgroundTexture = new Texture("background.jpg");
-        yodaTexture = new Texture("legoYoda.png");
-        palpTexture = new Texture("palpatine.png");
-        saberTexture = new Texture("greenSaber.png");
-        yodaDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-yoda-death-sound-effect.mp3"));
-        palpDeathSound = Gdx.audio.newSound(Gdx.files.internal("lego-star-wars-palpatine-hurt-sound.mp3"));
+    public void show() {
+        // Asset manager for easier creation of textures, sounds, etc.
+        assetManager = new AssetManager();
+        assetManager.load("background.jpg", Texture.class);
+        assetManager.load("legoYoda.png", Texture.class);
+        assetManager.load("palpatine.png", Texture.class);
+        assetManager.load("greenSaber.png", Texture.class);
+        assetManager.load("lego-yoda-death-sound-effect.mp3", Sound.class);
+        assetManager.load("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
+        assetManager.finishLoading();
+
+        backgroundTexture = assetManager.get("background.jpg", Texture.class);
+        yodaTexture = assetManager.get("legoYoda.png", Texture.class);
+        palpTexture = assetManager.get("palpatine.png", Texture.class);
+        saberTexture = assetManager.get("greenSaber.png", Texture.class);
+        yodaDeathSound = assetManager.get("lego-yoda-death-sound-effect.mp3", Sound.class);
+        palpDeathSound = assetManager.get("lego-star-wars-palpatine-hurt-sound.mp3", Sound.class);
 
         yodaHealth = 3;
         isGameOver = false;
@@ -85,21 +96,12 @@ public class GameScreen implements Screen{ //modify extends and implements
 
         weaponButtons.add(new WeaponToggleButton("Blaster Rifle", 0.25f, 0.08f, 2.05f, 0.42f, blasterRifle));
         weaponButtons.add(new WeaponToggleButton("Rocket Launcher", 2.45f, 0.08f, 2.15f, 0.42f, rocketLauncher));
-
+        shop = new ShopManager(yodaTower, assetManager);
         waveManager = new WaveManager(viewport, palpTexture);
-
-        //PAUSE
-        font = new BitmapFont();
-        shape = new ShapeRenderer();
-        font.getData().setScale(0.035f);
-        pausedTitleLayout = new GlyphLayout();
-        pausedHintLayout = new GlyphLayout();
 
         new Thread(() -> {
             while (!isGameOver) {
-                if (!paused) { //PAUSE LOGIC
-                    logic(1 / 60f); // doesnt render when paused
-                }
+                logic(1 / 60f);
                 try {
                     Thread.sleep(16);
                 } catch (Exception e) {
@@ -111,34 +113,34 @@ public class GameScreen implements Screen{ //modify extends and implements
 
     @Override
     public void render(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { // When ESC is pressed
-            if (!paused) { // Pause when not paused
-                pause(); 
-            } else { // Resume when paused
-                resume(); 
-            }
-        }
-
-        // Game logic runs normally when not paused
-        if (!paused) { 
-            input(); 
-        }
-
-        draw(); //always allo draw screen
+        input();
+        draw();
     }
 
     private void input() {
         if (isGameOver) return;
+
+        if (waveManager.isInShopPhase()) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                shop.rerollShop();
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+                if (!shop.getOfferings().isEmpty()) shop.buyTower(0, 1);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+                if (shop.getOfferings().size() > 1) shop.buyTower(1, 2);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                waveManager.startNextWave();
+            }
+            return;
+        }
 
         Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
         handleWeaponButtonInput(mousePos);
 
         yodaTower.updateAim(mousePos);
         yodaTower.clampToViewport(viewport);
-
-        if (waveManager.isInShopPhase() && Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            waveManager.startNextWave();
-        }
     }
 
     private void handleWeaponButtonInput(Vector2 mousePos) {
@@ -202,7 +204,7 @@ public class GameScreen implements Screen{ //modify extends and implements
                 continue;
             }
 
-            int defeatedEnemies = projectile.handleEnemyCollisions(enemies, explosionEffects);
+            int defeatedEnemies = projectile.handleEnemyCollisions(enemies, explosionEffects, shop);
             for (int defeated = 0; defeated < defeatedEnemies; defeated++) {
                 palpDeathSound.play();
             }
@@ -243,35 +245,6 @@ public class GameScreen implements Screen{ //modify extends and implements
 
         drawShapeEffectsAndUi();
         drawUiLabels();
-
-        if (paused){
-            shape.setProjectionMatrix(viewport.getCamera().combined); //shapes follow viewport and game camera
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); // enables alpha transparency
-            
-            shape.begin(ShapeRenderer.ShapeType.Filled);
-            shape.setColor(0, 0, 0, 0.7f);
-            shape.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight()); //covers whole screen
-            shape.end();
-            Gdx.gl.glDisable(GL20.GL_BLEND);
-
-            // Draw paused text centered on screen
-            spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
-            spriteBatch.begin();
-            font.setColor(Color.WHITE);
-            String title = "GAME PAUSED";
-            String hint = "Press ESC to Resume";
-            pausedTitleLayout.setText(font, title);
-            pausedHintLayout.setText(font, hint);
-            float titleX = (viewport.getWorldWidth() - pausedTitleLayout.width) / 2f;
-            float titleY = viewport.getWorldHeight() / 2f + pausedTitleLayout.height / 2f;
-            float hintX = (viewport.getWorldWidth() - pausedHintLayout.width) / 2f;
-            float hintY = viewport.getWorldHeight() / 2f - pausedHintLayout.height;
-            font.draw(spriteBatch, pausedTitleLayout, titleX, titleY);
-            font.draw(spriteBatch, pausedHintLayout, hintX, hintY);
-            spriteBatch.end();
-
-        }
     }
 
     private void drawShapeEffectsAndUi() {
@@ -306,15 +279,16 @@ public class GameScreen implements Screen{ //modify extends and implements
 
     @Override
     public void pause() {
-        paused = true;
-        System.out.println("Game Paused");
+        // Invoked when your application is paused.
     }
 
     @Override
     public void resume() {
-        paused = false;
-        System.out.println("Game Resumed");
+        // Invoked when your application is resumed after pause.
     }
+
+    @Override
+    public void hide() {}
 
     @Override
     public void dispose() {
@@ -327,13 +301,5 @@ public class GameScreen implements Screen{ //modify extends and implements
         saberTexture.dispose();
         yodaDeathSound.dispose();
         palpDeathSound.dispose();
-        //PAUSE LOGIC
-        if (font != null) font.dispose();
-        if (shape != null) shape.dispose();
-    }
-
-    @Override
-    public void hide(){
-        
     }
 }

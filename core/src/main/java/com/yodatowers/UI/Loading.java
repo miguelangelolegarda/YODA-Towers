@@ -7,13 +7,14 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.yodatowers.logic.GameScreen;
+import com.yodatowers.Main;
 
 public class Loading implements Screen{
-    
-    private final Game game; 
+
+    private final Game game;
     private float currentLoadingTime = 0f; // store how long loading screen has been shown
     private final float loadingTime = 5f; // Fixed time for loading
-    
+
     private float accumulator = 0f;
     private final float step = 1f; // set output of progress time | limit message spamming
 
@@ -24,7 +25,7 @@ public class Loading implements Screen{
 
     private boolean paused = false;
 
-    public Loading(Game game) {
+    public Loading(Main game) {
         this.game = game;
         batch = new SpriteBatch();
         font = new BitmapFont();
@@ -35,13 +36,13 @@ public class Loading implements Screen{
 
         currentLoadingTime += delta; //update loading time
 
-        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f,1); // set bg 
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); 
+        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f,1); // set bg
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // get loading progress
-        float progress = Math.min(currentLoadingTime / loadingTime, 1f); 
+        float progress = Math.min(currentLoadingTime / loadingTime, 1f);
         boolean finished = progress >= 1f; // finished when progress reaches 100%
-        
+
         accumulator += delta;
         if (accumulator >= step){ // print text based on step
             loadingText = "Loading: " + (int)(progress * 100) + "%";
@@ -57,7 +58,7 @@ public class Loading implements Screen{
             loadingText = "Loading Complete";
             System.out.println("Loading Complete"); //REMOVE AFTER TESTING
         }
-        
+
         return finished;
     }
 
@@ -66,7 +67,7 @@ public class Loading implements Screen{
         // call update every frame. if finished, switch to the GameScreen
         boolean finished = update(delta);
         if (finished) {
-            game.setScreen(new GameScreen());
+            game.setScreen(new GameScreen((Main) game));
         }
     }
 
